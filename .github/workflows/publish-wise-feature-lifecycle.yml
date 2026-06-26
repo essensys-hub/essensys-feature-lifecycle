@@ -57,7 +57,7 @@ jobs:
     container: python:3.11-slim
     environment: ${{ inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install jq and AWS CLI
         run: |
