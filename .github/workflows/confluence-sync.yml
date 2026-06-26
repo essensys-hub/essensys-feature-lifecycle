@@ -119,7 +119,7 @@ jobs:
 
       - name: Comment PR with draft links
         if: steps.select.outputs.has_manifests == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           LINK_FILE: /tmp/confluence-links.md
         with:
