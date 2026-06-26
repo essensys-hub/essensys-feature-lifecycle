@@ -1,0 +1,114 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "add-config-artifact-type",
+  "title": "Config artifact type across API, CLIs and UI",
+  "status": "in-progress",
+  "owner": "I0438973",
+  "jira": {
+    "issue": "TBD",
+    "test_plan": null
+  },
+  "git": {
+    "branch": "feat/add-config-artifact-type",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "add-config-artifact-type",
+    "path": "openspec/changes/add-config-artifact-type",
+    "proposal": "openspec/changes/add-config-artifact-type/proposal.md",
+    "design": "openspec/changes/add-config-artifact-type/design.md",
+    "tasks": "openspec/changes/add-config-artifact-type/tasks.md",
+    "specs": [
+      "openspec/changes/add-config-artifact-type/specs/config-artifact-backend/spec.md",
+      "openspec/changes/add-config-artifact-type/specs/config-artifact-cli/spec.md",
+      "openspec/changes/add-config-artifact-type/specs/config-artifact-ui/spec.md"
+    ]
+  },
+  "implementation": {
+    "paths": [
+      "api/routes/skills.py",
+      "api/routes/versions.py",
+      "api/validators/config_validator.py",
+      "cli/src/commands/install.js",
+      "cli/src/signing.js",
+      "docs/api-reference.md",
+      "go/ewise-skills/internal/install/parsezip.go",
+      "go/ewise-skills/internal/install/paths.go",
+      "services/zip_service.py",
+      "tests/test_config_api.py",
+      "tests/test_config_zip.py",
+      "wise-skills-react/src/api/types.ts"
+    ],
+    "primary_surface": "mixed"
+  },
+  "userguide": {
+    "pages": [
+      "docs/api-reference.md",
+      "docs/features/import-artifacts.md",
+      "docs/official_publish.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "pytest": [
+      "tests/test_config_api.py",
+      "tests/test_config_validator.py",
+      "tests/test_config_zip.py"
+    ],
+    "testthat": [],
+    "coverage_must_test": [
+      "config artifact content is validated against a JSON schema",
+      "config artifacts are downloadable and installable through the ZIP flow",
+      "config artifacts are accepted by the public API and reflected in version payloads"
+    ],
+    "smoke_tags": []
+  },
+  "confluence": {
+    "space": "WISE",
+    "parent_page": "66624620340",
+    "template": "feature-user-guide",
+    "draft_page_id": "67077603781",
+    "published_page_id": null
+  },
+  "release": {
+    "changelog_entry": "Added config as a first-class artifact type across backend, CLIs and React UI.",
+    "target_tag": null,
+    "surfaces": [
+      "api",
+      "cli-node",
+      "cli-go",
+      "react-user",
+      "react-admin"
+    ],
+    "paths": [
+      "changelogs/api/en.md",
+      "changelogs/api/fr.md",
+      "changelogs/react-admin/en.md",
+      "changelogs/react-admin/fr.md",
+      "changelogs/react-user/en.md",
+      "changelogs/react-user/fr.md"
+    ]
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": null,
+    "owner_security": "I0438973"
+  }
+}

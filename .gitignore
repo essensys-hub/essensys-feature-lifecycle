@@ -1,0 +1,41 @@
+# --- Secrets (NEVER commit) ---
+.env
+.env.local
+.env.int
+.env.uat
+.env.prod
+.env.*.local
+
+# --- macOS / editor noise ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# --- Python ---
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node (only if a CLI gets added later) ---
+node_modules/
+npm-debug.log*
+
+# --- Build & temp ---
+dist/
+build/
+*.log
+*.tmp
+*.bak
+
+# --- Confluence snapshot working files (the published index.json + per-page
+# storage.html + meta.json ARE versioned to give a reproducible baseline) ---
+confluence-snapshot/*.tmp
+confluence-snapshot/*.bak

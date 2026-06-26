@@ -1,0 +1,74 @@
+---
+description: Auto-update the per-component changelog (changelogs/{api,react-user,react-admin}/en.md and fr.md) on every user-facing application change. Apply when modifying API routes, services, models, the React UI, or the React Admin UI.
+globs:
+  - api/**/*.py
+  - services/**/*.py
+  - database/**/*.py
+  - wise-skills-react/src/**/*.tsx
+  - wise-skills-react/src/**/*.ts
+  - changelogs/**/*.md
+alwaysApply: false
+---
+
+# Auto-update changelog (`changelogs/<component>/<lang>.md`)
+
+Skills Portal ships **three runtime components** with **independent changelogs**, each written in **English** (canonical) and **French** (human-validated). Four other languages — German, Spanish, Simplified Chinese, Japanese — are auto-generated from `en.md` by `scripts/translate_changelog.py` (MindWise) at API deploy time.
+
+This rule keeps the changelog in sync with code changes. **Whenever you modify code in the matched globs, you MUST also update the relevant `changelogs/<component>/{en.md,fr.md}` under `## [Unreleased]`.**
+
+## Component routing
+
+| If you touched a file under… | Update changelog component |
+|---|---|
+| `api/`, `services/`, `database/` | `changelogs/api/` |
+| `wise-skills-react/src/pages/admin/**` | `changelogs/react-admin/` |
+| `wise-skills-react/src/**` (everything else) | `changelogs/react-user/` |
+| `wise-skills-react/src/i18n/**` | the React component you actually changed (read the calling page to decide) |
+
+If a single PR touches files for two components (rare), add an entry to **both** changelogs.
+
+## Required edits
+
+For every code change that is **user-visible** (UI string, API contract, behavior change, fix, performance, security), do the following — in this order:
+
+1. Open the right `changelogs/<component>/en.md`.
+2. Find the `## [Unreleased]` section at the top. Add **one bullet** under the appropriate sub-heading (`### Added`, `### Changed`, `### Fixed`, `### Removed`, `### Security`). Create the sub-heading if it does not yet exist.
+3. Phrase the bullet from the **user perspective**, present tense, English. Reference any code path with backticks. Example:
+   - ✅ "Skill detail page now surfaces the SHA-256 fingerprint next to the version selector."
+   - ❌ "refactored useSkillDetail.ts" (too internal, no user value).
+4. Repeat in the matching `fr.md`. Translate yourself, do not delegate to MindWise — `fr.md` must stay human-validated. Keep the bullet under the same `## [Unreleased]` and same `### …` sub-heading.
+5. Do **NOT** touch `de.md`, `es.md`, `zh.md`, `ja.md` — they are regenerated from `en.md` by CI. Editing them by hand is wasted work; the next translation run wipes it.
+
+## Pure refactors / internal changes
+
+Do **NOT** add a changelog entry for changes that are invisible to a portal user, an API caller, or an SRE reading dashboards. Examples that do **not** require an entry:
+
+- Code formatting, comment fixes, import ordering.
+- Tests-only changes (unit, integration, Playwright).
+- Internal renames, dead code removal.
+- Pure documentation edits inside `.cursor/`, `docs/`, or `openspec/`.
+
+If unsure, default to adding an entry — better one over-shared bullet than a silent regression.
+
+## Releasing
+
+When the Release Manager pushes the deploy tag (e.g. `int-deploy-api-rel-1.4.2-001`):
+
+1. Rename `## [Unreleased]` to `## [<X.Y.Z>] — <YYYY-MM-DD>` in the corresponding component's `en.md` and `fr.md`. Use the **deploy date**, not the commit date.
+2. Add a fresh empty `## [Unreleased]` block at the top.
+3. Push the deploy tag — CI runs `scripts/translate_changelog.py --all`, which regenerates `de/es/zh/ja` for that component, then builds the API image. The Flask startup hook calls `services.changelog_service.sync_changelog_to_db()` which mirrors the files into PostgreSQL, and the React About page picks them up via `GET /api/changelog`.
+
+## Anti-patterns
+
+- ❌ Editing `de.md` / `es.md` / `zh.md` / `ja.md` by hand.
+- ❌ Mixing entries for `api`, `react-user`, `react-admin` in the same file.
+- ❌ Renaming a `[Unreleased]` heading to a versioned heading without also adding a fresh empty `[Unreleased]` block.
+- ❌ Bumping `wise-skills-react/package.json#version` to communicate a release: the deployed version comes from the git tag injected at build (`VITE_GIT_TAG`), not from `package.json`.
+
+## Cross-references
+
+- File format and lifecycle: `changelogs/README.md`
+- DB cache + REST endpoint: `services/changelog_service.py`, `api/routes/changelog.py`
+- Translator: `scripts/translate_changelog.py`
+- Tag conventions: `.cursor/rules/ewise-deploy-api-tag-convention.mdc`
+- Legacy Streamlit changelog (`pages/about.py` + `CHANGELOG.md` root): `.cursor/rules/release-changelog.mdc` — still valid until the Streamlit prototype is fully retired.

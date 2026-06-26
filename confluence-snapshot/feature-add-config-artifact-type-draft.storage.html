@@ -1,0 +1,913 @@
+<p><strong>Status:</strong> Draft generated from pull request automation.</p>
+<p><strong>PR:</strong> #144</p>
+<p><strong>Branch:</strong> uat</p>
+<p><strong>Feature id:</strong> add-config-artifact-type</p>
+<h1>R&eacute;f&eacute;rence API REST &mdash; Skills Portal</h1>
+<h2>Base URL</h2>
+<table>
+<thead>
+<tr>
+<th>Environnement</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INT</td>
+<td><code>https://skills-api.int.<your-domain></code></td>
+</tr>
+<tr>
+<td>UAT</td>
+<td><code>https://skills-api.uat.<your-domain></code></td>
+</tr>
+<tr>
+<td>PROD</td>
+<td><code>https://skills-api.prod.<your-domain></code></td>
+</tr>
+</tbody>
+</table>
+<h2>Authentification</h2>
+<p>Les endpoints d'<strong>&eacute;criture</strong> n&eacute;cessitent le header <code>X-API-Key</code> :</p>
+<pre><code>X-API-Key: &lt;SKILLS_API_KEY&gt;
+</code></pre>
+<p>Les endpoints de <strong>lecture</strong> sont ouverts (pas d'auth requise).</p>
+<h2>Conventions</h2>
+<ul>
+<li>R&eacute;ponses JSON (<code>Content-Type: application/json</code>)</li>
+<li>Erreurs retourn&eacute;es avec code HTTP + <code>{&quot;error&quot;: &quot;...&quot;, &quot;message&quot;: &quot;...&quot;}</code>  </li>
+<li>Param&egrave;tre <code>?tool=</code> optionnel sur la plupart des endpoints (tracking audit)</li>
+<li>Param&egrave;tre <code>?context=</code> optionnel (filtre visibilit&eacute; : <code>admin</code> pour voir les items REJECTED)</li>
+</ul>
+<h2>Architecture des routes</h2>
+<p>Les routes suivent le principe <strong>Interface Adapters</strong> de Clean Architecture : elles ne contiennent aucune logique m&eacute;tier et d&eacute;l&egrave;guent syst&eacute;matiquement aux services de la couche Application.</p>
+<pre><code>Route (api/routes/*.py) &rarr; Service (services/*.py) &rarr; Model (database/models.py)
+</code></pre>
+<hr />
+<h2>Health &amp; Version</h2>
+<h3><code>GET /healthz</code></h3>
+<p>Healthcheck (utilis&eacute; par les probes K8s).</p>
+<p><strong>R&eacute;ponse</strong> : <code>200 OK</code></p>
+<h3><code>GET /api/version</code></h3>
+<p>Version de d&eacute;ploiement.</p>
+<p><strong>R&eacute;ponse</strong> :</p>
+<pre><code class="language-json">{
+  &quot;version&quot;: &quot;1.2.0&quot;,
+  &quot;version_git&quot;: &quot;uat-deploy-api-v1.2.0-075&quot;,
+  &quot;git_commit_sha&quot;: &quot;abc123...&quot;
+}
+</code></pre>
+<hr />
+<h2>Skills</h2>
+<h3><code>GET /api/skills</code></h3>
+<p>Liste toutes les skills visibles.</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>string</td>
+<td>Recherche textuelle (nom, description)</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>Filtre par <code>artifact_type</code> (<code>skill\|rule\|doc\|subagent\|agent-context\|mcp\|hook\|config</code>)</td>
+</tr>
+<tr>
+<td><code>tool</code></td>
+<td>string</td>
+<td>Outil client (audit)</td>
+</tr>
+<tr>
+<td><code>context</code></td>
+<td>string</td>
+<td><code>admin</code> pour voir les items REJECTED</td>
+</tr>
+</tbody>
+</table>
+<p><strong>R&eacute;ponse</strong> :</p>
+<pre><code class="language-json">{
+  &quot;items&quot;: [
+    {
+      &quot;id&quot;: 1,
+      &quot;name&quot;: &quot;my-skill&quot;,
+      &quot;description&quot;: &quot;...&quot;,
+      &quot;current_version&quot;: &quot;1.0.0&quot;,
+      &quot;artifact_type&quot;: &quot;skill&quot;,
+      &quot;is_official&quot;: false,
+      &quot;source_repo&quot;: &quot;&quot;,
+      &quot;current_version_id&quot;: 3,
+      &quot;verification_status&quot;: &quot;CLEAN&quot;,
+      &quot;updated_by&quot;: &quot;i0438973&quot;,
+      &quot;updated_at&quot;: &quot;2025-01-15T10:00:00+00:00&quot;,
+      &quot;avg_rating&quot;: 4.2,
+      &quot;rating_count&quot;: 5
+    }
+  ]
+}
+</code></pre>
+<h3><code>GET /api/skills/&lt;skill_id&gt;</code></h3>
+<p>D&eacute;tail d'une skill avec ses versions.</p>
+<p><strong>R&eacute;ponse</strong> :</p>
+<pre><code class="language-json">{
+  &quot;skill&quot;: {
+    &quot;id&quot;: 1,
+    &quot;name&quot;: &quot;my-skill&quot;,
+    &quot;description&quot;: &quot;...&quot;,
+    &quot;current_version&quot;: &quot;1.0.0&quot;,
+    &quot;artifact_type&quot;: &quot;skill&quot;,
+    &quot;is_official&quot;: false,
+    &quot;source_repo&quot;: &quot;&quot;,
+    &quot;created_by&quot;: &quot;i0438973&quot;,
+    &quot;created_at&quot;: &quot;2025-01-15T10:00:00+00:00&quot;,
+    &quot;updated_at&quot;: &quot;2025-01-15T10:00:00+00:00&quot;
+  },
+  &quot;versions&quot;: [
+    {
+      &quot;id&quot;: 3,
+      &quot;version&quot;: &quot;1.0.0&quot;,
+      &quot;changelog&quot;: &quot;Initial release&quot;,
+      &quot;created_at&quot;: &quot;2025-01-15T10:00:00+00:00&quot;,
+      &quot;is_published&quot;: true,
+      &quot;created_by&quot;: &quot;i0438973&quot;,
+      &quot;verification_status&quot;: &quot;CLEAN&quot;,
+      &quot;verification_report_id&quot;: 7
+    }
+  ]
+}
+</code></pre>
+<h3><code>POST /api/skills</code> (auth)</h3>
+<p>Cr&eacute;e une skill avec sa premi&egrave;re version, ou <strong>cr&eacute;e automatiquement une nouvelle version</strong> si un artefact avec le m&ecirc;me nom existe d&eacute;j&agrave; (upsert). D&eacute;clenche un scan IA (Bedrock) automatique.</p>
+<p><strong>Comportement upsert</strong> : si <code>name</code> correspond &agrave; un artefact existant (y compris REJECTED), l'API :
+1. R&eacute;cup&egrave;re le skill existant via <code>get_skill_by_name()</code> (sans filtre de visibilit&eacute;)
+2. Bump la version minor (ex: <code>1.1.0</code> &rarr; <code>1.2.0</code>)
+3. Cr&eacute;e la nouvelle version avec le contenu fourni
+4. Retourne <code>200 OK</code> avec <code>&quot;upserted&quot;: true</code> et <code>&quot;new_version&quot;: &quot;1.2.0&quot;</code></p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;my-skill&quot;,
+  &quot;description&quot;: &quot;A useful skill&quot;,
+  &quot;artifact_type&quot;: &quot;skill&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;content&quot;: &quot;# My Skill\n\nContent...&quot;,
+  &quot;changelog&quot;: &quot;Initial release&quot;,
+  &quot;files&quot;: {&quot;reference.md&quot;: &quot;# Reference...&quot;},
+  &quot;is_official&quot;: false,
+  &quot;source_repo&quot;: &quot;&quot;
+}
+</code></pre>
+<p><strong>Validation sp&eacute;ciale pour <code>config</code></strong> : quand <code>artifact_type</code> vaut <code>config</code>, le champ <code>content</code> est pars&eacute; comme JSON et valid&eacute; par un JSON Schema (<code>api/validators/config_schema.json</code>). Les champs requis sont <code>name</code> et <code>version</code> (format <code>X.Y</code>). En cas d'erreur de validation, la r&eacute;ponse est <code>400 Bad Request</code> avec le d&eacute;tail des violations.</p>
+<p><strong>R&eacute;ponses</strong> :
+- <code>201 Created</code> : nouveau skill cr&eacute;&eacute;
+- <code>200 OK</code> : skill existant, nouvelle version ajout&eacute;e (upsert)
+- <code>400 Bad Request</code> : validation &eacute;chou&eacute;e (config JSON invalide, nom invalide, etc.)</p>
+<h3><code>PATCH /api/skills/&lt;skill_id&gt;</code> (auth)</h3>
+<p>Met &agrave; jour description et/ou artifact_type.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;description&quot;: &quot;Updated description&quot;,
+  &quot;artifact_type&quot;: &quot;rule&quot;
+}
+</code></pre>
+<h3><code>DELETE /api/skills/&lt;skill_id&gt;</code> (auth)</h3>
+<p>Supprime une skill et toutes ses versions (cascade).</p>
+<p><strong>R&eacute;ponse</strong> : <code>{&quot;deleted&quot;: true, &quot;skill_id&quot;: 1, &quot;name&quot;: &quot;my-skill&quot;}</code></p>
+<hr />
+<h2>Versions</h2>
+<h3><code>GET /api/skills/&lt;skill_id&gt;/versions</code></h3>
+<p>Liste les versions d'une skill.</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tool</code></td>
+<td>string</td>
+<td>Outil client (audit)</td>
+</tr>
+<tr>
+<td><code>context</code></td>
+<td>string</td>
+<td><code>admin</code> pour voir tous les statuts</td>
+</tr>
+</tbody>
+</table>
+<h3><code>GET /api/versions/&lt;version_id&gt;</code></h3>
+<p>D&eacute;tail d'une version sp&eacute;cifique (contenu, fichiers, m&eacute;tadonn&eacute;es). Inclut d&eacute;sormais <code>content_hash_sha256</code> (hash d'int&eacute;grit&eacute; du contenu).</p>
+<p><strong>R&eacute;ponse</strong> :</p>
+<pre><code class="language-json">{
+  &quot;id&quot;: 3,
+  &quot;skill_id&quot;: 1,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;content&quot;: &quot;# Skill content...&quot;,
+  &quot;files&quot;: {&quot;reference.md&quot;: &quot;...&quot;},
+  &quot;changelog&quot;: &quot;Initial release&quot;,
+  &quot;created_at&quot;: &quot;2025-01-15T10:00:00+00:00&quot;,
+  &quot;created_by&quot;: &quot;i0438973&quot;,
+  &quot;is_published&quot;: true,
+  &quot;verification_status&quot;: &quot;CLEAN&quot;,
+  &quot;content_hash_sha256&quot;: &quot;abc123...&quot;
+}
+</code></pre>
+<h3><code>GET /api/skills/&lt;skill_id&gt;/versions/&lt;vid&gt;/signature</code></h3>
+<p>Retourne les informations d'int&eacute;grit&eacute; et de signature pour une version donn&eacute;e.</p>
+<p><strong>R&eacute;ponse 200 :</strong></p>
+<pre><code class="language-json">{
+  &quot;skill_id&quot;: 123,
+  &quot;version_id&quot;: 456,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;content_hash_sha256&quot;: &quot;abc123...&quot;,
+  &quot;signature&quot;: &quot;MEYCIQCMntDu...&quot;,
+  &quot;signing_key_id&quot;: &quot;dev-key-1&quot;,
+  &quot;algorithm&quot;: &quot;ECDSA_SHA_256&quot;,
+  &quot;signed_at&quot;: &quot;2026-02-24T10:00:00+00:00&quot;
+}
+</code></pre>
+<ul>
+<li><code>signature</code> : signature ECDSA P-256 encod&eacute;e base64 (DER). <code>null</code> si la signature n'est pas activ&eacute;e.</li>
+<li><code>signing_key_id</code> : identifiant de la cl&eacute; utilis&eacute;e pour signer.</li>
+<li><code>algorithm</code> : toujours <code>ECDSA_SHA_256</code> quand une signature est pr&eacute;sente.</li>
+</ul>
+<p><strong>R&eacute;ponse 404 :</strong> Version non trouv&eacute;e.</p>
+<h3><code>POST /api/skills/&lt;skill_id&gt;/versions/&lt;vid&gt;/verify-integrity</code></h3>
+<p>V&eacute;rifie l'int&eacute;grit&eacute; d'un artefact : compare le hash client vs serveur et valide la signature.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;client_hash&quot;: &quot;abc123...&quot;
+}
+</code></pre>
+<p><strong>R&eacute;ponse 200 / 409 :</strong></p>
+<pre><code class="language-json">{
+  &quot;skill_id&quot;: 123,
+  &quot;version_id&quot;: 456,
+  &quot;server_hash&quot;: &quot;abc123...&quot;,
+  &quot;client_hash&quot;: &quot;abc123...&quot;,
+  &quot;hash_match&quot;: true,
+  &quot;signature_valid&quot;: true,
+  &quot;trust_level&quot;: &quot;SIGNED_VERIFIED&quot;
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Trust Level</th>
+<th>Signification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SIGNED_VERIFIED</code></td>
+<td>Hash match + signature valide</td>
+</tr>
+<tr>
+<td><code>HASH_ONLY</code></td>
+<td>Hash match, pas de signature</td>
+</tr>
+<tr>
+<td><code>SIGNED_UNVERIFIED</code></td>
+<td>Signature pr&eacute;sente, pas de hash client</td>
+</tr>
+<tr>
+<td><code>TAMPERED</code></td>
+<td>Hash mismatch &rarr; <strong>HTTP 409</strong></td>
+</tr>
+<tr>
+<td><code>SIGNATURE_INVALID</code></td>
+<td>Signature invalide ou cl&eacute; r&eacute;voqu&eacute;e</td>
+</tr>
+<tr>
+<td><code>UNKNOWN</code></td>
+<td>Donn&eacute;es insuffisantes</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Signing Keys</h2>
+<h3><code>GET /api/signing-keys</code></h3>
+<p>Liste les cl&eacute;s publiques de signature (actives et r&eacute;voqu&eacute;es). Lecture publique, pas d'auth requise.</p>
+<p><strong>R&eacute;ponse 200 :</strong></p>
+<pre><code class="language-json">{
+  &quot;keys&quot;: [
+    {
+      &quot;id&quot;: &quot;dev-key-1&quot;,
+      &quot;algorithm&quot;: &quot;ECDSA_SHA_256&quot;,
+      &quot;public_key_pem&quot;: &quot;-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----&quot;,
+      &quot;is_active&quot;: true,
+      &quot;created_at&quot;: &quot;2026-02-24T09:00:00+00:00&quot;,
+      &quot;expires_at&quot;: null,
+      &quot;revoked_at&quot;: null,
+      &quot;revoked_reason&quot;: null
+    }
+  ]
+}
+</code></pre>
+<h3><code>POST /api/signing-keys</code> (auth)</h3>
+<p>Enregistre une nouvelle cl&eacute; de signature. Option <code>rotate</code> pour d&eacute;sactiver automatiquement les autres cl&eacute;s.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;prod-key-2026-03&quot;,
+  &quot;public_key_pem&quot;: &quot;-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----&quot;,
+  &quot;algorithm&quot;: &quot;ECDSA_SHA_256&quot;,
+  &quot;kms_key_arn&quot;: &quot;arn:aws:kms:eu-west-1:488440267176:key/...&quot;,
+  &quot;activate&quot;: true,
+  &quot;rotate&quot;: false
+}
+</code></pre>
+<ul>
+<li><code>rotate: true</code> : d&eacute;sactive automatiquement toutes les autres cl&eacute;s actives (rotation)</li>
+</ul>
+<p><strong>R&eacute;ponse</strong> : <code>201 Created</code></p>
+<h3><code>POST /api/signing-keys/&lt;key_id&gt;/revoke</code> (auth)</h3>
+<p>R&eacute;voque une cl&eacute; de signature. Toutes les signatures faites avec cette cl&eacute; deviennent non fiables.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;reason&quot;: &quot;Key compromised &mdash; rotating to new key&quot;
+}
+</code></pre>
+<p><strong>R&eacute;ponse</strong> : <code>200 OK</code> &mdash; <code>{&quot;revoked&quot;: true, &quot;key&quot;: {...}}</code></p>
+<h3><code>PATCH /api/signing-keys/&lt;key_id&gt;</code> (auth)</h3>
+<p>Active ou d&eacute;sactive une cl&eacute; de signature (non r&eacute;voqu&eacute;e).</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;is_active&quot;: false
+}
+</code></pre>
+<p><strong>R&eacute;ponse</strong> : <code>200 OK</code> &mdash; <code>{&quot;updated&quot;: true, &quot;key&quot;: {...}}</code></p>
+<h3><code>POST /api/skills/&lt;skill_id&gt;/versions</code> (auth)</h3>
+<p>Cr&eacute;e une nouvelle version. D&eacute;clenche un scan IA (Bedrock) automatique.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;version&quot;: &quot;1.1.0&quot;,
+  &quot;content&quot;: &quot;# Updated content...&quot;,
+  &quot;changelog&quot;: &quot;Added feature X&quot;,
+  &quot;files&quot;: {}
+}
+</code></pre>
+<hr />
+<h2>Download</h2>
+<h3><code>GET /api/skills/&lt;skill_id&gt;/download</code></h3>
+<p>T&eacute;l&eacute;charge la skill en ZIP. Bloqu&eacute; si <code>verification_status</code> n'est pas <code>CLEAN</code> (exception : <code>UNSCANNED</code> autoris&eacute; en transition).</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tool</code></td>
+<td>string</td>
+<td>Outil cible (cursor, kiro, claude, codex, antigravity, copilot)</td>
+</tr>
+<tr>
+<td><code>version_id</code></td>
+<td>int</td>
+<td>ID de version sp&eacute;cifique (optionnel, default: version courante)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>R&eacute;ponse</strong> : <code>application/zip</code></p>
+<hr />
+<h2>Profiles</h2>
+<h3><code>GET /api/profiles</code></h3>
+<p>Liste les profiles.</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>string</td>
+<td>Recherche textuelle</td>
+</tr>
+<tr>
+<td><code>persona</code></td>
+<td>string</td>
+<td>Filtre par persona</td>
+</tr>
+<tr>
+<td><code>tag</code></td>
+<td>string</td>
+<td>Filtre par tag</td>
+</tr>
+<tr>
+<td><code>visibility</code></td>
+<td>string</td>
+<td><code>public</code> (default) ou <code>all</code> (admin)</td>
+</tr>
+<tr>
+<td><code>official</code></td>
+<td>string</td>
+<td><code>true\|false</code></td>
+</tr>
+</tbody>
+</table>
+<h3><code>GET /api/profiles/&lt;profile_id&gt;</code></h3>
+<p>D&eacute;tail d'un profile avec ses versions.</p>
+<h3><code>GET /api/profiles/by-slug/&lt;slug&gt;</code></h3>
+<p>Lookup par slug.</p>
+<h3><code>POST /api/profiles</code> (auth)</h3>
+<p>Cr&eacute;e un profile.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;slug&quot;: &quot;biostat-cursor&quot;,
+  &quot;name&quot;: &quot;Biostatistician (Cursor)&quot;,
+  &quot;description&quot;: &quot;Profile for clinical biostatisticians using Cursor&quot;,
+  &quot;persona&quot;: &quot;biostatistician&quot;,
+  &quot;tags&quot;: [&quot;clinical&quot;, &quot;R&quot;, &quot;SAS&quot;],
+  &quot;visibility&quot;: &quot;public&quot;,
+  &quot;is_official&quot;: true,
+  &quot;source_repo&quot;: &quot;essensys-hub/wise-ewise-docs&quot;
+}
+</code></pre>
+<h3><code>PATCH /api/profiles/&lt;profile_id&gt;</code> (auth)</h3>
+<p>Met &agrave; jour un profile (name, description, persona, tags, visibility).</p>
+<h3><code>DELETE /api/profiles/&lt;profile_id&gt;</code> (auth)</h3>
+<p>Supprime un profile (cascade).</p>
+<h3><code>POST /api/profiles/&lt;profile_id&gt;/versions</code> (auth)</h3>
+<p>Cr&eacute;e une version de profile avec ses items.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;changelog&quot;: &quot;Initial profile&quot;,
+  &quot;items&quot;: [
+    {
+      &quot;artifact_type&quot;: &quot;skill&quot;,
+      &quot;artifact_name&quot;: &quot;my-skill&quot;,
+      &quot;version_selector&quot;: &quot;latest&quot;,
+      &quot;tool_scope&quot;: &quot;cursor&quot;,
+      &quot;order&quot;: 0
+    }
+  ]
+}
+</code></pre>
+<h3><code>POST /api/profiles/&lt;profile_id&gt;/versions/&lt;vid&gt;/publish</code> (auth)</h3>
+<p>Publie une version de profile (draft &rarr; published).</p>
+<p>La publication &eacute;choue avec <code>400 Bad Request</code> si la version contient des items non installables, par exemple :</p>
+<ul>
+<li>un item <code>latest</code> sans version stable (<code>CLEAN</code> ou <code>APPROVED_BY_HUMAN</code>)</li>
+<li>un item <code>pinned</code> dont la version demand&eacute;e est introuvable</li>
+</ul>
+<p>Dans ce cas, le corps JSON contient un <code>message</code> d&eacute;taillant les artefacts bloquants.</p>
+<h3><code>GET /api/profiles/&lt;profile_id&gt;/versions/&lt;vid&gt;/items</code></h3>
+<p>Retourne les items bruts d'une version.</p>
+<h3><code>GET /api/profiles/&lt;profile_id&gt;/versions/&lt;vid&gt;/resolved</code></h3>
+<p>Retourne les items r&eacute;solus (versions concr&egrave;tes) pour un tool donn&eacute;.</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tool</code></td>
+<td>string</td>
+<td><strong>Requis</strong> : cursor, kiro, claude, copilot, etc.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>R&eacute;ponse</strong> :</p>
+<pre><code class="language-json">{
+  &quot;profile_id&quot;: 12,
+  &quot;profile_version_id&quot;: 34,
+  &quot;tool&quot;: &quot;cursor&quot;,
+  &quot;blocked&quot;: [
+    {
+      &quot;skill_id&quot;: 56,
+      &quot;name&quot;: &quot;pre-commit-secret-check&quot;,
+      &quot;artifact_type&quot;: &quot;rule&quot;,
+      &quot;version&quot;: &quot;&quot;,
+      &quot;status&quot;: &quot;NO_STABLE_VERSION&quot;,
+      &quot;version_selector&quot;: &quot;latest&quot;,
+      &quot;pinned_version&quot;: &quot;&quot;
+    }
+  ],
+  &quot;items&quot;: [
+    {
+      &quot;item_id&quot;: 1,
+      &quot;order&quot;: 0,
+      &quot;artifact_type&quot;: &quot;rule&quot;,
+      &quot;skill_id&quot;: 56,
+      &quot;name&quot;: &quot;pre-commit-secret-check&quot;,
+      &quot;requested&quot;: {
+        &quot;version_selector&quot;: &quot;latest&quot;,
+        &quot;pinned_version&quot;: &quot;&quot;
+      },
+      &quot;resolved_version_id&quot;: null,
+      &quot;resolved_version&quot;: &quot;&quot;,
+      &quot;verification_status&quot;: &quot;NO_STABLE_VERSION&quot;
+    }
+  ]
+}
+</code></pre>
+<h3><code>GET /api/profiles/&lt;profile_id&gt;/versions/&lt;vid&gt;/download</code></h3>
+<p>T&eacute;l&eacute;charge le profile r&eacute;solu en ZIP.</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tool</code></td>
+<td>string</td>
+<td><strong>Requis</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>R&eacute;ponses</strong> :</p>
+<ul>
+<li><code>200 OK</code> avec <code>application/zip</code> si tous les items sont r&eacute;solus et installables</li>
+<li><code>403 Forbidden</code> si un ou plusieurs items restent bloquants</li>
+</ul>
+<p>Exemple de message de blocage :</p>
+<pre><code class="language-json">{
+  &quot;error&quot;: &quot;Forbidden&quot;,
+  &quot;message&quot;: &quot;Profile non verifie: 1 item(s) bloquant(s): pre-commit-secret-check [rule] - aucune version stable disponible.&quot;
+}
+</code></pre>
+<hr />
+<h2>Teams &amp; Known Users</h2>
+<h3><code>GET /api/teams</code></h3>
+<p>Liste toutes les teams. Auth : <code>X-API-Key</code> ou identit&eacute; Connect.</p>
+<p><strong>R&eacute;ponse</strong> : <code>{ &quot;teams&quot;: [{ &quot;id&quot;, &quot;slug&quot;, &quot;display_name&quot;, &quot;description&quot;, &quot;created_by&quot;, &quot;created_at&quot;, &quot;updated_at&quot; }] }</code></p>
+<h3><code>GET /api/my/teams</code></h3>
+<p>Retourne les teams de l'utilisateur courant (d'apr&egrave;s l'identit&eacute; Connect).</p>
+<p><strong>R&eacute;ponse</strong> : <code>{ &quot;teams&quot;: [{ &quot;team_id&quot;, &quot;slug&quot;, &quot;display_name&quot;, &quot;role&quot; }] }</code></p>
+<h3><code>GET /api/known-users</code></h3>
+<p>Liste les utilisateurs connus (extraits de <code>audit_events</code>). Auth : <code>X-API-Key</code> ou identit&eacute; Connect.</p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>string</td>
+<td>Filtre (user_id ou email, LIKE)</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>int</td>
+<td>Max r&eacute;sultats (d&eacute;faut 20, max 100)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>R&eacute;ponse</strong> : <code>{ &quot;users&quot;: [{ &quot;user_id&quot;: &quot;i0438973&quot;, &quot;user_email&quot;: &quot;...&quot; }] }</code></p>
+<hr />
+<h2>Ratings &amp; Comments</h2>
+<h3><code>GET /api/skills/&lt;skill_id&gt;/ratings</code></h3>
+<p>Retourne le r&eacute;sum&eacute; des ratings d'une skill (<code>avg_rating</code>, <code>rating_count</code>).</p>
+<h3><code>GET /api/skills/&lt;skill_id&gt;/rating</code></h3>
+<p>Retourne le rating de l'utilisateur courant pour la skill.</p>
+<h3><code>POST /api/skills/&lt;skill_id&gt;/comments</code> (auth)</h3>
+<p>Cr&eacute;e un commentaire (avec rating optionnel 1-5).</p>
+<h3><code>GET /api/skills/&lt;skill_id&gt;/comments</code></h3>
+<p>Liste les commentaires d'une skill.</p>
+<hr />
+<h2>Verification (Security Scan)</h2>
+<h3><code>POST /api/skills/&lt;skill_id&gt;/versions/&lt;vid&gt;/verify</code> (auth)</h3>
+<p>D&eacute;marre un scan IA (Bedrock) asynchrone.</p>
+<p><strong>R&eacute;ponse</strong> : <code>202 Accepted</code> + <code>{&quot;report_id&quot;: 42}</code></p>
+<h3><code>GET /api/skills/&lt;skill_id&gt;/versions/&lt;vid&gt;/verification</code></h3>
+<p>Statut et rapport de v&eacute;rification d'une version.</p>
+<h3><code>GET /api/skills/&lt;skill_id&gt;/verification</code></h3>
+<p>Label global de v&eacute;rification (version courante).</p>
+<h3><code>GET /api/verification-reports</code> (auth)</h3>
+<p>Listing pagin&eacute; des rapports de v&eacute;rification.</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>status</code></td>
+<td>string</td>
+<td>Filtre par statut (CLEAN, REJECTED, PENDING, etc.)</td>
+</tr>
+<tr>
+<td><code>skill_id</code></td>
+<td>int</td>
+<td>Filtre par skill</td>
+</tr>
+<tr>
+<td><code>skill_version_id</code></td>
+<td>int</td>
+<td>Filtre par version</td>
+</tr>
+</tbody>
+</table>
+<h3><code>POST /api/skills/&lt;skill_id&gt;/versions/&lt;vid&gt;/approve-by-human</code> (auth)</h3>
+<p>Approbation manuelle d'une version REJECTED par un admin (override humain).</p>
+<p><strong>R&eacute;ponse</strong> : <code>200 OK</code></p>
+<h3><code>POST /api/skills/&lt;skill_id&gt;/versions/&lt;vid&gt;/publish</code> (auth)</h3>
+<p>Publie une version uniquement si <code>CLEAN</code> ou <code>APPROVED_BY_HUMAN</code>. Sinon d&eacute;clenche un scan et refuse.</p>
+<hr />
+<h2>Drafts</h2>
+<h3><code>GET /api/my/drafts</code></h3>
+<p>Liste les brouillons de l'utilisateur courant.</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>Filtre par <code>artifact_type</code> (skill, rule, doc, subagent, agent-context, mcp, hook, config)</td>
+</tr>
+</tbody>
+</table>
+<h3><code>GET /api/drafts/&lt;skill_id&gt;</code></h3>
+<p>D&eacute;tail d'un brouillon (skill + version courante).</p>
+<h3><code>POST /api/drafts</code> (auth)</h3>
+<p>Cr&eacute;e un brouillon de skill avec version initiale.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;my-draft-skill&quot;,
+  &quot;description&quot;: &quot;Work in progress&quot;,
+  &quot;artifact_type&quot;: &quot;skill&quot;,
+  &quot;content&quot;: &quot;# Draft content...&quot;,
+  &quot;files&quot;: {}
+}
+</code></pre>
+<h3><code>PATCH /api/drafts/&lt;skill_id&gt;</code> (auth)</h3>
+<p>Met &agrave; jour un brouillon (description, content, files, changelog).</p>
+<h3><code>POST /api/drafts/&lt;skill_id&gt;/scan</code> (auth)</h3>
+<p>D&eacute;clenche un scan de v&eacute;rification sur un brouillon.</p>
+<p><strong>R&eacute;ponse</strong> : <code>202 Accepted</code></p>
+<h3><code>DELETE /api/drafts/&lt;skill_id&gt;</code> (auth)</h3>
+<p>Supprime un brouillon.</p>
+<hr />
+<h2>Backups</h2>
+<p>Tous les endpoints backup n&eacute;cessitent <code>X-API-Key</code>.</p>
+<h3><code>GET /api/backups</code></h3>
+<p>Liste les backups disponibles (S3 ou local).</p>
+<p><strong>R&eacute;ponse</strong> :</p>
+<pre><code class="language-json">{
+  &quot;backup_root&quot;: &quot;s3://ewise-skills-uat/skills-portal/uat/backups/&quot;,
+  &quot;items&quot;: [
+    {
+      &quot;name&quot;: &quot;skills-portal-backup-20250215-020000.tar.gz&quot;,
+      &quot;size_bytes&quot;: 1234567,
+      &quot;modified_at&quot;: &quot;2025-02-15T02:00:00+00:00&quot;,
+      &quot;meta&quot;: {
+        &quot;created_at&quot;: &quot;2025-02-15T02:00:00+00:00&quot;,
+        &quot;created_by&quot;: &quot;cron&quot;,
+        &quot;database&quot;: &quot;postgres&quot;,
+        &quot;format_version&quot;: 1,
+        &quot;version_git&quot;: &quot;uat-deploy-api-v1.1.0-062&quot;
+      }
+    }
+  ]
+}
+</code></pre>
+<h3><code>POST /api/backups</code></h3>
+<p>Cr&eacute;e un nouveau backup (dump PostgreSQL + donn&eacute;es applicatives &rarr; archive <code>.tar.gz</code> &rarr; S3).</p>
+<p><strong>R&eacute;ponse</strong> : <code>201 Created</code> + <code>{&quot;created&quot;: true, &quot;backup&quot;: {...}}</code></p>
+<p>Retourne <code>409 Conflict</code> si un backup/restore est d&eacute;j&agrave; en cours.</p>
+<h3><code>GET /api/backups/&lt;name&gt;/download</code></h3>
+<p>T&eacute;l&eacute;charge une archive de backup (streaming depuis S3).</p>
+<h3><code>DELETE /api/backups/&lt;name&gt;</code></h3>
+<p>Supprime un backup.</p>
+<h3><code>POST /api/backups/&lt;name&gt;/restore</code></h3>
+<p>Restaure un backup (DB + donn&eacute;es applicatives).</p>
+<p>Retourne <code>409 Conflict</code> si une op&eacute;ration est d&eacute;j&agrave; en cours.</p>
+<h3><code>POST /api/backups/upload</code></h3>
+<p>Upload d'une archive de backup (multipart field <code>file</code>).</p>
+<h3><code>GET /api/backups/schedule</code></h3>
+<p>Retourne le schedule cron des backups automatiques.</p>
+<h3><code>PUT /api/backups/schedule</code></h3>
+<p>Met &agrave; jour le schedule cron.</p>
+<p><strong>Body</strong> : <code>{&quot;cron&quot;: &quot;0 2 * * *&quot;}</code></p>
+<h3><code>GET /api/backups/health</code></h3>
+<p>Sant&eacute; du syst&egrave;me de backup (status, dernier run, erreurs, verrou).</p>
+<hr />
+<h2>Settings</h2>
+<h3><code>GET /api/settings</code> (auth)</h3>
+<p>Retourne tous les param&egrave;tres applicatifs.</p>
+<h3><code>PUT /api/settings/&lt;key&gt;</code> (auth)</h3>
+<p>Met &agrave; jour une cl&eacute; de param&egrave;tre applicatif.</p>
+<hr />
+<h2>Audit</h2>
+<h3><code>GET /api/audit-events</code> (auth)</h3>
+<p>Liste pagin&eacute;e des &eacute;v&eacute;nements d'audit.</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page</code></td>
+<td>int</td>
+<td>Pagination (page)</td>
+</tr>
+<tr>
+<td><code>per_page</code></td>
+<td>int</td>
+<td>Pagination (taille de page)</td>
+</tr>
+<tr>
+<td><code>action</code></td>
+<td>string</td>
+<td>Filtre par type d'action</td>
+</tr>
+<tr>
+<td><code>user_id</code></td>
+<td>string</td>
+<td>Filtre par utilisateur</td>
+</tr>
+</tbody>
+</table>
+<h3><code>GET /api/audit-stats</code> (auth)</h3>
+<p>Statistiques d'usage agr&eacute;g&eacute;es par cat&eacute;gorie d'action. Utilis&eacute; par la page <strong>Stats</strong> de l'Admin UI (vues Ex&eacute;cutive et Technique).</p>
+<table>
+<thead>
+<tr>
+<th>Param&egrave;tre</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from_date</code></td>
+<td>string (ISO 8601)</td>
+<td>Date de d&eacute;but du filtre (optionnel &mdash; d&eacute;faut : <code>to_date - 30 jours</code>)</td>
+</tr>
+<tr>
+<td><code>to_date</code></td>
+<td>string (ISO 8601)</td>
+<td>Date de fin du filtre (optionnel &mdash; d&eacute;faut : maintenant UTC)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cat&eacute;gories</strong> :</p>
+<table>
+<thead>
+<tr>
+<th>Cl&eacute;</th>
+<th>Actions agr&eacute;g&eacute;es</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>skill_download</code></td>
+<td><code>api_download</code></td>
+</tr>
+<tr>
+<td><code>skill_create</code></td>
+<td><code>api_create_skill</code>, <code>api_upsert_skill</code></td>
+</tr>
+<tr>
+<td><code>profile_download</code></td>
+<td><code>profile_download</code></td>
+</tr>
+<tr>
+<td><code>skill_edit</code></td>
+<td><code>api_update_skill</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>R&eacute;ponse</strong> (r&eacute;tro-compatible &mdash; les champs <code>summary</code>, <code>timeline</code> et <code>tool_breakdown</code> ont &eacute;t&eacute; ajout&eacute;s en 1.4.1) :</p>
+<pre><code class="language-json">{
+  &quot;categories&quot;: [
+    {
+      &quot;key&quot;: &quot;skill_download&quot;,
+      &quot;label_fr&quot;: &quot;T&eacute;l&eacute;chargements de skills&quot;,
+      &quot;label_en&quot;: &quot;Skill downloads&quot;,
+      &quot;actions&quot;: [&quot;api_download&quot;],
+      &quot;unique_users&quot;: 42,
+      &quot;total_events&quot;: 318,
+      &quot;tool_breakdown&quot;: { &quot;cli&quot;: 180, &quot;api&quot;: 95, &quot;ui&quot;: 40, &quot;unknown&quot;: 3 },
+      &quot;top_users&quot;: [
+        {
+          &quot;user_id&quot;: &quot;i0438973&quot;,
+          &quot;user_display_name&quot;: &quot;John Doe&quot;,
+          &quot;user_email&quot;: &quot;john.doe@<your-domain>&quot;,
+          &quot;count&quot;: 25,
+          &quot;last_seen&quot;: &quot;2026-02-24 10:30:00&quot;
+        }
+      ],
+      &quot;top_skills&quot;: [
+        { &quot;skill_id&quot;: 123, &quot;skill_name&quot;: &quot;my-skill&quot;, &quot;count&quot;: 15 }
+      ]
+    }
+  ],
+  &quot;summary&quot;: {
+    &quot;period_start&quot;: &quot;2026-03-31T00:00:00+00:00&quot;,
+    &quot;period_end&quot;: &quot;2026-04-30T11:00:00+00:00&quot;,
+    &quot;period_days&quot;: 31,
+    &quot;total_events&quot;: 1248,
+    &quot;total_unique_users&quot;: 87,
+    &quot;active_users_last_7d&quot;: 41,
+    &quot;avg_actions_per_user&quot;: 14.3,
+    &quot;previous_period&quot;: {
+      &quot;total_events&quot;: 1102,
+      &quot;total_unique_users&quot;: 79
+    }
+  },
+  &quot;timeline&quot;: [
+    { &quot;date&quot;: &quot;2026-03-31&quot;, &quot;skill_download&quot;: 12, &quot;skill_create&quot;: 0, &quot;profile_download&quot;: 1, &quot;skill_edit&quot;: 2, &quot;total&quot;: 15 },
+    { &quot;date&quot;: &quot;2026-04-01&quot;, &quot;skill_download&quot;: 8,  &quot;skill_create&quot;: 1, &quot;profile_download&quot;: 0, &quot;skill_edit&quot;: 0, &quot;total&quot;: 9  }
+  ],
+  &quot;filters&quot;: { &quot;from_date&quot;: null, &quot;to_date&quot;: null }
+}
+</code></pre>
+<ul>
+<li><code>top_users</code> : jusqu'&agrave; 50 utilisateurs tri&eacute;s par nombre d'actions d&eacute;croissant</li>
+<li><code>top_skills</code> : jusqu'&agrave; 20 skills (uniquement pour les cat&eacute;gories li&eacute;es aux skills : <code>skill_download</code>, <code>skill_create</code>, <code>skill_edit</code>)</li>
+<li><code>tool_breakdown</code> : d&eacute;compte des &eacute;v&eacute;nements par famille d'outil &mdash; la classification (<code>cli</code> / <code>api</code> / <code>ui</code> / <code>unknown</code>) d&eacute;rive du champ <code>tool</code> de l'audit (<code>cli</code>, <code>web</code>, <code>react</code>, <code>browser</code>, <code>rest</code>, <code>curl</code>, <code>http</code>, etc.)</li>
+<li><code>summary.previous_period</code> : agr&eacute;gats sur la fen&ecirc;tre de m&ecirc;me dur&eacute;e imm&eacute;diatement ant&eacute;rieure &agrave; <code>period_start</code>, utilis&eacute;s par le frontend pour afficher les variations <code>▲/▼ x.x%</code></li>
+<li><code>timeline</code> : un point par jour de la p&eacute;riode (z&eacute;ros remplis pour les jours sans activit&eacute;)</li>
+</ul>
+<hr />
+<h2>Official Publish</h2>
+<h3><code>POST /api/official/publish</code> (auth)</h3>
+<p>Publication officielle depuis un CI/CD externe (ex: <code>wise-ewise-docs</code>).</p>
+<p>Idempotent par <code>(name, version)</code>. D&eacute;clenche un scan IA (Bedrock) automatique.</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;<org>-jfrog-mirror&quot;,
+  &quot;artifact_type&quot;: &quot;doc&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;description&quot;: &quot;Documentation officielle&quot;,
+  &quot;changelog&quot;: &quot;Publication officielle&quot;,
+  &quot;content&quot;: &quot;# Titre\n\nContenu...&quot;,
+  &quot;files&quot;: {},
+  &quot;source_repo&quot;: &quot;essensys-hub/wise-ewise-docs&quot;,
+  &quot;actor&quot;: &quot;wise-ewise-docs&quot;
+}
+</code></pre>
+<p><strong>R&eacute;ponse</strong> : <code>201 Created</code> (nouvelle version) ou <code>200 OK</code> (version existante).</p>
+<hr />
+<h2>Bedrock (LLM) Jobs</h2>
+<h3><code>POST /api/bedrock/jobs</code></h3>
+<p>Cr&eacute;e un job Bedrock (LLM) (purge automatique des jobs &gt; 2h).</p>
+<p><strong>Body</strong> :</p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;improve_description&quot;,
+  &quot;context&quot;: &quot;...&quot;
+}
+</code></pre>
+<h3><code>GET /api/bedrock/jobs/&lt;job_id&gt;</code></h3>
+<p>D&eacute;tail et statut d'un job Bedrock (LLM).</p>
+<h3><code>PATCH /api/bedrock/jobs/&lt;job_id&gt;</code></h3>
+<p>Met &agrave; jour un job (status, text, append_text, error).</p>
+<hr />
+<h2>CLI Package</h2>
+<h3><code>GET /api/cli/skills-portal-cmd.tgz</code></h3>
+<p>T&eacute;l&eacute;charge le package CLI Node.js (<code>.tgz</code>).</p>
+<p><strong>R&eacute;ponse</strong> : <code>application/gzip</code></p>
+<h3><code>GET /api/cli/&lt;binary_name&gt;</code></h3>
+<p>T&eacute;l&eacute;charge un binaire CLI Go <code>ewise-skills</code> (darwin/linux/windows selon nom).</p>
+<hr />
+<h2>Prompt Config (Verification)</h2>
+<h3><code>GET /api/verification-prompt-config</code> (auth)</h3>
+<p>Retourne la configuration YAML active des prompts de v&eacute;rification (depuis DB ou fichier fallback).</p>
+<h3><code>PUT /api/verification-prompt-config</code> (auth)</h3>
+<p>Met &agrave; jour et active la configuration des prompts de v&eacute;rification.</p>
+<hr />
+<h2>Migration</h2>
+<h3><code>POST /api/migrate</code> (auth)</h3>
+<p>D&eacute;clenche une migration SQLite &rarr; PostgreSQL (usage ponctuel).</p>

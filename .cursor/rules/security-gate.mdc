@@ -1,0 +1,38 @@
+---
+description: Enforce mandatory security gates for dependency updates, secrets, Dockerfiles, workflows, and feature manifests. Apply when touching package manifests, requirements, Dockerfiles, GitHub workflows, Terraform, feature manifests, or security triage docs.
+globs:
+  - "**/package.json"
+  - "**/package-lock.json"
+  - "**/requirements*.txt"
+  - "**/pyproject.toml"
+  - "**/Dockerfile"
+  - ".github/workflows/**/*.y*ml"
+  - ".github/dependabot.yml"
+  - "**/*.tf"
+  - "features/*.json"
+alwaysApply: false
+---
+
+# Security Gate
+
+- Software Composition Analysis (SCA) is **open source**: **Trivy** (CVE on Go/npm/pip deps + Docker/IaC misconfig) and GitHub-native Dependabot alerts, run by the `security-gate` workflow. No proprietary scanner (no CodeGuard/Checkmarx). GitGuardian is at most an optional secrets dashboard, never the blocking gate.
+- Secret scanning is **gitleaks** (open source); it is the blocking layer for secrets.
+- Treat security as **blocking by default**: Critical and High findings must be fixed or formally muted with traceability.
+- Never commit credentials, API keys, passwords, tokens, PEM blocks, `.env` secrets, or copied secret payloads. Secrets live in SOPS (`essensys-ansible/secrets/`).
+- When adding dependencies, keep them pinned and check for CVEs (Trivy + Dependabot) before merging.
+- When a PR fails the security gate, use `security-gate-triage`: read the `security-gate` artifacts (incl. `trivy.json`) and the repo Dependabot alerts, then fix or formally mute.
+- Secrets are never muted. If a secret leaks, scrub Git history and rotate the secret.
+
+## File-specific checks
+
+- `package.json` / `package-lock.json`: prefer maintained packages, use `overrides` for transitive CVEs, document any ignore list.
+- `requirements*.txt` / `pyproject.toml`: pin versions when possible, justify exceptions, run dependency audit.
+- `Dockerfile`: no `latest`, no root runtime user, no `curl | bash`, keep layers minimal — Trivy misconfig scan flags these.
+- `*.tf` / Ansible / Compose: Trivy IaC misconfig scan applies; fix Critical/High misconfigurations.
+- `.github/workflows/**`: explicit `permissions:`, least privilege, no secret echo, no unsafe interpolation inside `run:`.
+- `features/*.json`: keep `security` populated with real counters and justification links for muted findings.
+
+## Evidence
+
+- A mute is a **Dependabot alert dismissal** with a reason, recorded in the feature manifest `security.muted_findings[]` (`id`, `severity`, `justification_url`, `expires_at`). The `justification_url` must point to a real dismissal/justification — never fabricate it.
+- Keep Git as the source of truth for security exceptions, overrides, and changelog entries.

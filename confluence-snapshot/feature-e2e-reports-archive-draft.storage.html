@@ -1,0 +1,862 @@
+<p><strong>Status:</strong> Draft generated from pull request automation.</p>
+<p><strong>PR:</strong> #144</p>
+<p><strong>Branch:</strong> uat</p>
+<p><strong>Feature id:</strong> e2e-reports-archive</p>
+<h1>E2E Testing Suite</h1>
+<p>Comprehensive end-to-end test suite for the <strong>Skills Portal React</strong> application
+(<code>wise-skills-react/</code>). Covers public, authenticated user, and authenticated
+admin flows, plus WCAG 2.1 AA accessibility audits and a read-only PROD smoke
+run. All credentials live in the <strong>single central project secret</strong>
+<code>wise-application-skills</code>; no long-lived credentials in GitHub Actions or in
+this repository.</p>
+<h2>Overview</h2>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Framework</td>
+<td>Playwright 1.49+</td>
+</tr>
+<tr>
+<td>Browser</td>
+<td>Chromium (Desktop Chrome profile)</td>
+</tr>
+<tr>
+<td>Authentication</td>
+<td><code>storageState</code> pattern &mdash; one Keycloak login per run</td>
+</tr>
+<tr>
+<td>Accessibility</td>
+<td><code>@axe-core/playwright</code> (WCAG 2.1 A + AA tags)</td>
+</tr>
+<tr>
+<td>CI</td>
+<td>GitHub Actions, OIDC trust to AWS IAM</td>
+</tr>
+<tr>
+<td>Runner</td>
+<td>Essensys self-hosted: <code>runs-on: [atmos-aws-arc-runner-set]</code></td>
+</tr>
+<tr>
+<td>Container</td>
+<td>Essensys DockerHub mirror: <code>public-mirror-docker-dockerhub.artifactory.<your-domain>/node:20-bookworm</code></td>
+</tr>
+<tr>
+<td>Secrets backend</td>
+<td>AWS Secrets Manager &mdash; <code>wise-application-skills</code> (single secret)</td>
+</tr>
+<tr>
+<td>Number of <code>@smoke</code></td>
+<td>23 read-only tests (14 user + 8 admin, 1 build wizard read-only)</td>
+</tr>
+</tbody>
+</table>
+<h2>Architecture</h2>
+<pre><code class="language-mermaid">flowchart LR
+  subgraph &quot;Local / CI runner&quot;
+    PW[Playwright]
+    SU[setup-user]
+    SA[setup-admin]
+    UJ[user.json]
+    AJ[admin.json]
+    PUB[public]
+    USR[user]
+    ADM[admin]
+    A11Y[a11y]
+  end
+
+  subgraph &quot;<org>&quot;
+    KC[Keycloak SSO]
+    APP[Skills Portal API + UI]
+    SM[(AWS Secrets Manager&lt;br/&gt;wise-application-skills)]
+  end
+
+  PW --&gt; SU
+  PW --&gt; SA
+  SU --&gt; KC
+  SA --&gt; KC
+  KC --&gt; UJ
+  KC --&gt; AJ
+  PUB --&gt; APP
+  USR -.uses.-&gt; UJ
+  ADM -.uses.-&gt; AJ
+  A11Y -.uses.-&gt; UJ
+  A11Y -.uses.-&gt; AJ
+  USR --&gt; APP
+  ADM --&gt; APP
+  A11Y --&gt; APP
+
+  CI[GitHub Actions OIDC] --&gt; SM
+  SM --&gt; SU
+  SM --&gt; SA
+</code></pre>
+<h2>Test projects</h2>
+<p>Defined in <code>wise-skills-react/playwright.config.ts</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Purpose</th>
+<th>Storage state</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setup-user</code></td>
+<td>Logs the standard user, persists session</td>
+<td>writes <code>tests/.auth/user.json</code></td>
+<td>&mdash;</td>
+</tr>
+<tr>
+<td><code>setup-admin</code></td>
+<td>Logs the admin user, persists session</td>
+<td>writes <code>tests/.auth/admin.json</code></td>
+<td>&mdash;</td>
+</tr>
+<tr>
+<td><code>public</code></td>
+<td>Login flow, public catalog</td>
+<td>none</td>
+<td>&mdash;</td>
+</tr>
+<tr>
+<td><code>user</code></td>
+<td>Authenticated user journeys</td>
+<td><code>tests/.auth/user.json</code></td>
+<td><code>setup-user</code></td>
+</tr>
+<tr>
+<td><code>admin</code></td>
+<td>Authenticated admin journeys</td>
+<td><code>tests/.auth/admin.json</code></td>
+<td><code>setup-admin</code></td>
+</tr>
+<tr>
+<td><code>a11y</code></td>
+<td>WCAG 2.1 A/AA audits</td>
+<td>user (admin via <code>test.use</code>)</td>
+<td><code>setup-user</code>, <code>setup-admin</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Test layout</h3>
+<pre><code>wise-skills-react/tests/
+├── auth/
+│   ├── user.setup.ts        # writes tests/.auth/user.json
+│   └── admin.setup.ts       # writes tests/.auth/admin.json
+├── .auth/                   # gitignored &mdash; contains storageState files
+└── e2e/
+    ├── _guards.ts           # PROD read-only HTTP guard (custom test fixture)
+    ├── public/auth.spec.ts
+    ├── user/                # 7 specs (home, profiles, teams, skill-detail,
+    │                        #   skill-build, documentation, notifications)
+    ├── admin/               # 8 specs (audit, artifacts, backups, keys,
+    │                        #   profiles, security, settings, teams)
+    └── a11y/                # 2 specs (user-pages, admin-pages)
+</code></pre>
+<h3>Selector strategy &mdash; <code>data-testid</code> over translated labels</h3>
+<p>Selectors that depend on <code>getByRole(..., { name: /&lt;text&gt;/i })</code> against a
+translated label silently break the moment the runner's locale changes.
+The login button is the canonical example: the i18n value of
+<code>layout.login</code> is <code>Connexion</code> (fr), <code>Log in</code> (en, <strong>with a space</strong>),
+<code>Iniciar sesi&oacute;n</code> (es), <code>Anmelden</code> (de), <code>ログイン</code> (ja), <code>登录</code> (zh).
+The previous regex <code>/connexion|login/i</code> only matched the French label
+because <code>&quot;Log in&quot;</code> does <strong>not</strong> contain the substring <code>login</code> &mdash; and the
+CI Chromium ships with <code>accept-language: en-US</code> by default, so all
+four E2E tests that touched the login flow timed out and cascaded into
+50 skipped tests.</p>
+<p>Rule of thumb for E2E selectors against this app:</p>
+<ol>
+<li><strong>Prefer <code>data-testid</code></strong> for any control whose label is
+   user-visible and translated. Add <code>data-testid=&quot;&lt;scope&gt;-&lt;action&gt;&quot;</code> on
+   the React component (e.g. <code>header-login-button</code>,
+   <code>header-logout-button</code>) and select it with
+   <code>page.getByTestId('header-login-button')</code>. Locale-independent,
+   stable across i18n updates, zero impact on UX or accessibility.</li>
+<li><strong>Use <code>getByRole</code></strong> for controls whose accessible role/name is
+   stable across locales &mdash; typically generic shells like <code>main</code>, <code>nav</code>,
+   <code>dialog</code>. The role itself does not depend on translation.</li>
+<li><strong>Avoid regexes on translated labels.</strong> If you really must, list
+   every supported locale and pin the runner's <code>Accept-Language</code> via
+   <code>use.locale</code> in <code>playwright.config.ts</code> so the test surface stays
+   deterministic.</li>
+</ol>
+<p>The current <code>data-testid</code> taxonomy covers:</p>
+<table>
+<thead>
+<tr>
+<th><code>data-testid</code></th>
+<th>Component</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>header-login-button</code></td>
+<td><code>AppShell.tsx</code> (header)</td>
+<td><code>tests/auth/{user,admin}.setup.ts</code>, <code>tests/e2e/public/auth.spec.ts</code></td>
+</tr>
+<tr>
+<td><code>header-logout-button</code></td>
+<td><code>AppShell.tsx</code> (header)</td>
+<td><code>tests/e2e/user/notifications.spec.ts</code> (@smoke : attente hydratation OIDC)</td>
+</tr>
+<tr>
+<td><code>header-notifications-link</code></td>
+<td><code>AppShell.tsx</code> (header)</td>
+<td><code>tests/e2e/user/notifications.spec.ts</code> (@smoke : cloche notifications une fois authentifi&eacute;)</td>
+</tr>
+<tr>
+<td><code>skill-build-stepper</code></td>
+<td><code>SkillBuildPage.tsx</code></td>
+<td><code>tests/e2e/user/skill-build.spec.ts</code></td>
+</tr>
+</tbody>
+</table>
+<p>Add a row to that table whenever you introduce a new test-id.</p>
+<h3>Accessibilit&eacute; (axe) sur INT vs bundle d&eacute;ploy&eacute;</h3>
+<p>Le job <code>playwright-int</code> analyse l&rsquo;UI servie par <code>BASE_URL_INT</code> (artefact
+d&eacute;j&agrave; d&eacute;ploy&eacute;). Les correctifs de contraste fusionn&eacute;s dans Git ne sont
+refl&eacute;t&eacute;s dans l&rsquo;audit qu&rsquo;apr&egrave;s d&eacute;ploiement sur INT. Pour &eacute;viter des
+&eacute;checs bloquants li&eacute;s au d&eacute;calage bundle/Git, la r&egrave;gle axe
+<code>color-contrast</code> est <strong>d&eacute;sactiv&eacute;e sur INT seulement</strong> lorsque la variable
+<code>E2E_STRICT_A11Y</code> n&rsquo;est pas &agrave; <code>1</code> (voir <code>tests/e2e/a11y/axeBuilder.ts</code>).
+Les jobs UAT et tout run avec <code>E2E_STRICT_A11Y=1</code> conservent la v&eacute;rification
+compl&egrave;te WCAG 2.1 AA pour les r&egrave;gles pr&eacute;sentes dans les tags axe.</p>
+<h2>Triggers</h2>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Job(s) executed</th>
+<th>Environment</th>
+<th>Duration</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pull request on <code>wise-skills-react/**</code></td>
+<td><code>playwright-int</code></td>
+<td>INT</td>
+<td>&le; 25 min</td>
+<td>7 days</td>
+</tr>
+<tr>
+<td>Push on <code>main</code> (paths-filtered)</td>
+<td><code>playwright-int</code></td>
+<td>INT</td>
+<td>&le; 25 min</td>
+<td>7 days</td>
+</tr>
+<tr>
+<td>Manual <code>workflow_dispatch</code> (<code>INT</code>)</td>
+<td><code>playwright-int</code></td>
+<td>INT</td>
+<td>&le; 25 min</td>
+<td>7 days</td>
+</tr>
+<tr>
+<td>Manual <code>workflow_dispatch</code> (<code>UAT</code>)</td>
+<td><code>playwright-uat</code></td>
+<td>UAT</td>
+<td>&le; 25 min</td>
+<td>14 days</td>
+</tr>
+<tr>
+<td>Manual <code>workflow_dispatch</code> (<code>PROD</code>)</td>
+<td><code>playwright-prod-smoke</code></td>
+<td>PROD (read-only)</td>
+<td>&le; 15 min</td>
+<td>30 days</td>
+</tr>
+</tbody>
+</table>
+<p>Smoke vs. full suite:</p>
+<ul>
+<li><strong>Full suite</strong> (INT, UAT) runs every project: <code>public + user + admin + a11y</code>.</li>
+<li><strong>PROD smoke</strong> runs only <code>--grep @smoke</code>, scoped to <code>public + user + admin</code>.
+  The <code>a11y</code> project is intentionally excluded from PROD because it can issue
+  many parallel checks that we never want to run on the live customer
+  environment.</li>
+</ul>
+<blockquote>
+<p>Nightly and weekly cron triggers are an explicit follow-up. They will be
+added in a separate change once the manual workflow has been validated end
+to end on INT and UAT (see <code>.github/workflows/e2e.yaml</code> <code>on:</code> block).</p>
+</blockquote>
+<h2>Credentials and configuration lifecycle</h2>
+<h3>Storage</h3>
+<p><strong>Fifteen JSON keys</strong> inside the single central secret
+<code>arn:aws:secretsmanager:eu-west-1:488440267176:secret:wise-application-skills-OLLdE5</code>.
+Per the project-wide single-secret policy
+(<code>.cursor/rules/<org>-w-tools-bastion.mdc</code> &sect; 9), every E2E configuration
+value &mdash; credentials <em>and</em> base URLs &mdash; lives in this one secret. No GitHub
+Repository Variables, no per-feature secret.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>E2E_USER_LOGIN_INT</code></td>
+<td>credential</td>
+<td><code>setup-user</code>, INT job</td>
+</tr>
+<tr>
+<td><code>E2E_USER_PASSWORD_INT</code></td>
+<td>credential</td>
+<td><code>setup-user</code>, INT job</td>
+</tr>
+<tr>
+<td><code>E2E_ADMIN_LOGIN_INT</code></td>
+<td>credential</td>
+<td><code>setup-admin</code>, INT job</td>
+</tr>
+<tr>
+<td><code>E2E_ADMIN_PASSWORD_INT</code></td>
+<td>credential</td>
+<td><code>setup-admin</code>, INT job</td>
+</tr>
+<tr>
+<td><code>E2E_USER_LOGIN_UAT</code></td>
+<td>credential</td>
+<td><code>setup-user</code>, UAT job</td>
+</tr>
+<tr>
+<td><code>E2E_USER_PASSWORD_UAT</code></td>
+<td>credential</td>
+<td><code>setup-user</code>, UAT job</td>
+</tr>
+<tr>
+<td><code>E2E_ADMIN_LOGIN_UAT</code></td>
+<td>credential</td>
+<td><code>setup-admin</code>, UAT job</td>
+</tr>
+<tr>
+<td><code>E2E_ADMIN_PASSWORD_UAT</code></td>
+<td>credential</td>
+<td><code>setup-admin</code>, UAT job</td>
+</tr>
+<tr>
+<td><code>E2E_USER_LOGIN_PROD</code></td>
+<td>credential</td>
+<td><code>setup-user</code>, PROD smoke job</td>
+</tr>
+<tr>
+<td><code>E2E_USER_PASSWORD_PROD</code></td>
+<td>credential</td>
+<td><code>setup-user</code>, PROD smoke job</td>
+</tr>
+<tr>
+<td><code>E2E_ADMIN_LOGIN_PROD</code></td>
+<td>credential</td>
+<td><code>setup-admin</code>, PROD smoke job</td>
+</tr>
+<tr>
+<td><code>E2E_ADMIN_PASSWORD_PROD</code></td>
+<td>credential</td>
+<td><code>setup-admin</code>, PROD smoke job</td>
+</tr>
+<tr>
+<td><code>BASE_URL_INT</code></td>
+<td>config URL</td>
+<td><code>playwright-int</code> job (<code>E2E_BASE_URL</code>)</td>
+</tr>
+<tr>
+<td><code>BASE_URL_UAT</code></td>
+<td>config URL</td>
+<td><code>playwright-uat</code> job (<code>E2E_BASE_URL</code>)</td>
+</tr>
+<tr>
+<td><code>BASE_URL_PROD</code></td>
+<td>config URL</td>
+<td><code>playwright-prod-smoke</code> job (<code>E2E_BASE_URL</code>)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Naming convention <code>&lt;NAME&gt;_&lt;ENV&gt;</code> is enforced project-wide. INT, UAT, and
+PROD each have their own dedicated Keycloak accounts (UAT does <strong>not</strong>
+share INT credentials); PROD additionally is read-only by Keycloak policy.
+The three <code>BASE_URL_*</code> keys are not credentials but they live in the same
+secret because the project mandates a single source of truth for <em>all</em>
+E2E configuration.</p>
+</blockquote>
+<h3>Setup and rotation</h3>
+<p>The bastion <code><bastion-host></code> is the
+only path used to manage these keys (no AWS CLI on operator workstations).</p>
+<pre><code class="language-bash"># 1. Operator copies the credentials into a local .env (gitignored).
+#    See scripts/secrets/README.md for the exact key names.
+
+# 2. Push the keys (additive merge, preserves all other keys).
+./scripts/secrets/setup-e2e-keys.sh .env
+
+# 3. Verify (credentials show lengths only, URLs show full values).
+./scripts/secrets/audit-e2e-keys.sh
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>Cadence</th>
+<th>Procedure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INT</td>
+<td>Every 6 months</td>
+<td>Update <code>.env</code> (<code>user_*</code>), rerun <code>setup-e2e-keys.sh</code>, rerun audit</td>
+</tr>
+<tr>
+<td>UAT</td>
+<td>Every 6 months</td>
+<td>Update <code>.env</code> (<code>user_*_uat</code>), rerun <code>setup-e2e-keys.sh</code>, rerun audit</td>
+</tr>
+<tr>
+<td>PROD</td>
+<td>Every 3 months</td>
+<td>Update <code>.env</code> (<code>user_*_prod</code>), rerun <code>setup-e2e-keys.sh</code>, rerun audit</td>
+</tr>
+</tbody>
+</table>
+<h3>Retrieval at runtime</h3>
+<p>In CI, the workflow <code>.github/workflows/e2e.yaml</code> retrieves only the keys it
+needs for the target environment. The retrieval step never prints values; it
+masks them via <code>::add-mask::</code> and writes them to <code>$GITHUB_ENV</code>. Temporary
+files are <code>shred -u</code>-ed before the step exits.</p>
+<pre><code class="language-yaml">runs-on: [atmos-aws-arc-runner-set]
+container:
+  image: public-mirror-docker-dockerhub.artifactory.<your-domain>/node:20-bookworm
+steps:
+  - uses: <org>-InnerSource/github-actions-library/setup-root-ca@main
+  - uses: <org>-InnerSource/github-actions-library/install-aws-cli@main
+  - name: Configure AWS credentials (OIDC)
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: arn:aws:iam::488440267176:role/App_InfraRunner_Github_Role
+      aws-region: eu-west-1
+  - name: Load E2E_*_INT credentials and BASE_URL_INT from wise-application-skills
+    run: |
+      aws secretsmanager get-secret-value --secret-id wise-application-skills ...
+      # Exports the four E2E_*_INT keys (masked) and the BASE_URL_INT value
+      # under the env name E2E_BASE_URL into $GITHUB_ENV.
+</code></pre>
+<h3>Essensys internal PKI &mdash; full chain install in system trust + Chromium NSS</h3>
+<p>The three target hostnames
+(<code>skills.{int,uat,prod}.<your-domain></code>) are signed by
+the <strong>Essensys internal root CA</strong>. The CI container ships an initial CA
+bundle (via <code><org>-InnerSource/github-actions-library/setup-root-ca</code>),
+exported through:</p>
+<pre><code>NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/<org>-ca.crt
+REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+</code></pre>
+<p>That covers Node, Python <code>requests</code>, OpenSSL CLIs, curl. <strong>It does not
+cover Chromium</strong>, which uses its own NSS database
+(<code>sql:$HOME/.pki/nssdb</code>) and ignores those env vars entirely. As a
+result, an unmodified container fails every Playwright navigation with
+<code>net::ERR_CERT_AUTHORITY_INVALID</code>.</p>
+<p>The workflow therefore installs the <strong>full Essensys CA chain</strong> in <em>both</em>
+the system trust store <em>and</em> the Chromium NSS store. The chain itself is
+fetched at job time from AWS Secrets Manager
+(<code>arn:aws:secretsmanager:eu-west-1:488440267176:secret:<org>_CA_CHAIN_PEM_20230918-yr1xnv</code>)
+so the canonical chain &mdash; managed centrally by the Essensys PKI team &mdash; is
+always current without checking certificates into Git.</p>
+<p>The install is wrapped in a local composite action,
+<code>.github/actions/install-<org>-ca-chain</code>. Each E2E job invokes it once,
+right after <code>Load E2E_*_&lt;ENV&gt;</code> (which already assumed the IAM role):</p>
+<pre><code class="language-yaml">- name: Install Essensys CA chain (system trust + Chromium NSS)
+  uses: ./.github/actions/install-<org>-ca-chain
+</code></pre>
+<p>The action performs six steps:</p>
+<ol>
+<li><code>aws secretsmanager get-secret-value --secret-id <org>_CA_CHAIN_PEM_20230918</code>
+   &rarr; writes the PEM to <code>/tmp/<org>-ca-chain.pem</code> (mode 644). The chain is
+   not a secret per se (public certificates) but living in Secrets Manager
+   gives a single rotation point owned by the Essensys PKI team.</li>
+<li>Copies the PEM to <code>/usr/local/share/ca-certificates/<org>-ca-chain.crt</code>
+   and runs <code>update-ca-certificates</code>, propagating the chain to
+   <code>/etc/ssl/certs/ca-certificates.crt</code> for every system tool.</li>
+<li><code>apt-get install -y --no-install-recommends libnss3-tools</code> to get
+   <code>certutil</code> (Mozilla's NSS CLI).</li>
+<li><code>mkdir -p $HOME/.pki/nssdb &amp;&amp; certutil -d sql:$HOME/.pki/nssdb -N
+   --empty-password</code> initialises the per-user NSS database (idempotent
+   if the DB already exists, hence the <code>|| true</code>).</li>
+<li><code>certutil -d sql:$HOME/.pki/nssdb -A -t &quot;C,,&quot; -n <org>-ca-chain -i
+   /tmp/<org>-ca-chain.pem</code> imports the chain. Because the job runs as
+   root (default in <code>node:20-bookworm</code>), <code>HOME=/root</code> and Chromium will
+   read <code>sql:/root/.pki/nssdb</code> at launch time.</li>
+<li><code>certutil -L</code> is then grepped for the <code><org>-ca-chain</code> entry; the
+   step fails fast (<code>::error::<org>-ca-chain not present in NSS store
+   after import</code>) if the import was silently skipped. The PEM file is
+   then <code>rm -f</code>-ed.</li>
+</ol>
+<p>With this in place, <strong><code>ignoreHTTPSErrors</code> is NOT enabled</strong> in
+<code>playwright.config.ts</code>. Chromium does a real chain-of-trust validation
+against the Essensys root CA, exactly like a real user.</p>
+<blockquote>
+<p><strong>IAM</strong> &mdash; the consumer role (<code>App_InfraRunner_Github_Role</code>) must hold
+<code>secretsmanager:GetSecretValue</code> on
+<code>arn:aws:secretsmanager:eu-west-1:488440267176:secret:<org>_CA_CHAIN_PEM_20230918-*</code>
+in addition to the <code>wise-application-skills-*</code> ARN. If the workflow
+fails on <code>Install Essensys CA chain</code> with an <code>AccessDenied</code>, ask a
+<code>CE_AppAdmin</code> operator to extend the role's inline policy.</p>
+<p><strong>Single-secret policy exception</strong> &mdash; the project rule of
+<code>.cursor/rules/<org>-w-tools-bastion.mdc</code> &sect; 9 mandates that <em>project</em>
+secrets live in <code>wise-application-skills</code>. <code><org>_CA_CHAIN_PEM_20230918</code>
+is a <em>platform</em> secret shared across every Essensys project, owned by the
+Essensys PKI team &mdash; not a project secret. The exception is therefore
+legitimate: the project secret is and remains
+<code>wise-application-skills</code>; the platform CA chain is consumed read-only.</p>
+</blockquote>
+<h3>IAM role &mdash; <org>-compliant single role</h3>
+<p>All three jobs (<code>playwright-int</code>, <code>playwright-uat</code>, <code>playwright-prod-smoke</code>)
+assume <strong>the same</strong> IAM role, which is already provisioned and reused by every
+other workflow in this repository:</p>
+<pre><code>arn:aws:iam::488440267176:role/App_InfraRunner_Github_Role
+</code></pre>
+<p>This role is fully aligned with the Essensys IAM doctrine
+(<a href="https://<your-org>.atlassian.net/wiki/spaces/CODE/pages/63632441865">How to create an IAM Role</a>,
+<a href="https://<your-org>.atlassian.net/wiki/spaces/CODE/pages/65430135919">AppAdmin permissions</a>,
+<a href="https://<your-org>.atlassian.net/wiki/spaces/CODE/pages/64275123793">Github OIDC for AWS deployments</a>):</p>
+<table>
+<thead>
+<tr>
+<th>Essensys requirement</th>
+<th>How this role satisfies it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mandatory <code>App_</code> prefix for custom roles</td>
+<td><code>App_InfraRunner_Github_Role</code></td>
+</tr>
+<tr>
+<td>Mandatory <code>CE_AppAdminBoundary</code> permission boundary</td>
+<td>Attached at provisioning (managed by the AWS account owner)</td>
+</tr>
+<tr>
+<td><org>-hardened OIDC claim (<code>/<org>-digital</code>)</td>
+<td>Trust uses <code>token.actions.githubusercontent.com/<org>-digital:sub</code></td>
+</tr>
+<tr>
+<td>No wildcard on <code>Org/repo</code></td>
+<td><code>sub</code> is scoped to <code>repo:essensys-hub/skills-portal:*</code></td>
+</tr>
+<tr>
+<td>Mandatory <code>CE_Application_*</code> and <code>CE_Environment</code> tags</td>
+<td>Carried by the role at provisioning time (AWS account <code>488440267176</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The PROD smoke job does <strong>not</strong> use a separate IAM role. The PROD safety
+boundary instead comes from three layered guards (see
+<a href="#prod-read-only-safeguards">PROD read-only safeguards</a> below): the GitHub
+Environment <code>production-smoke</code> with required reviewers, the dedicated
+read-only Keycloak account, and the HTTP route guard in <code>_guards.ts</code> that
+throws on any non-<code>GET</code>/<code>HEAD</code>/<code>OPTIONS</code> request when <code>E2E_READ_ONLY=true</code>.</p>
+<p>The role grants <code>secretsmanager:GetSecretValue</code> on
+<code>arn:aws:secretsmanager:eu-west-1:488440267176:secret:wise-application-skills-*</code>.
+There is no <code>PutSecretValue</code> permission &mdash; secrets are written exclusively by
+the operator from the bastion (see <code>scripts/secrets/setup-e2e-keys.sh</code>).</p>
+<h2>Runner &amp; container &mdash; <org>-compliant</h2>
+<p>The three jobs run on the <strong>Essensys self-hosted runner set</strong> rather than on
+GitHub-hosted <code>ubuntu-latest</code>, exactly like every other workflow in this
+repository (<code>deploy-api</code>, <code>deploy-react-ui</code>, <code>deploy-admin-ui</code>,
+<code>Manuel_Codeguard</code>, <code>call_codeguard</code>):</p>
+<pre><code class="language-yaml">runs-on: [atmos-aws-arc-runner-set]
+container:
+  image: public-mirror-docker-dockerhub.artifactory.<your-domain>/node:20-bookworm
+permissions:
+  id-token: write
+  contents: read
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Why this choice</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runner <code>atmos-aws-arc-runner-set</code></td>
+<td>Self-hosted runner set in the Essensys AWS account. Required for OIDC trust against <code>App_InfraRunner_Github_Role</code>, network reachability of the EKS apps, and Prisma/CodeGuard policy compliance. See the <code>wise-infra-kube-devops</code> skill.</td>
+</tr>
+<tr>
+<td>Container <code>node:20-bookworm</code></td>
+<td>Essensys public DockerHub mirror &mdash; needed because the runners are in a Zscaler/VPN-bounded VPC where pulling from <code>docker.io</code> is blocked. Bookworm (not Alpine) is required because Playwright browsers need glibc and standard system libraries.</td>
+</tr>
+<tr>
+<td>First step <code>setup-root-ca</code></td>
+<td>Installs the Essensys root CA inside the container so subsequent <code>curl</code>, <code>npm</code>, <code>playwright install</code> calls trust internal endpoints.</td>
+</tr>
+<tr>
+<td>Second step <code>install-aws-cli</code></td>
+<td>Provides AWS CLI v2 inside the Node.js container (the upstream <code>node:20-bookworm</code> image does not ship <code>aws</code>).</td>
+</tr>
+<tr>
+<td><code>apt-get install jq</code></td>
+<td>Installed at runtime via the <org>-mirrored Debian apt sources. Used by the secrets retrieval step to parse the JSON returned by <code>aws secretsmanager get-secret-value</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The Playwright browsers themselves (Chromium + system libs) are installed by
+<code>npx playwright install --with-deps chromium</code>, which uses the <code>apt</code> sources
+already configured inside the <org>-mirrored Debian image.</p>
+<blockquote>
+<p>If you ever need to bump the Node.js major version, change both the env
+<code>PLAYWRIGHT_CONTAINER</code> (documentation) and the inline <code>container.image</code>
+in each of the three jobs. They must stay in sync.</p>
+</blockquote>
+<h2>Local execution</h2>
+<p>Prerequisites:</p>
+<pre><code class="language-bash">cd wise-skills-react
+npm install
+npx playwright install --with-deps chromium
+</code></pre>
+<p>Provide credentials locally (any of the four ways below):</p>
+<pre><code class="language-bash"># 1. Inline (simplest, ephemeral)
+export E2E_ENV=INT
+export E2E_USER_LOGIN_INT=...
+export E2E_USER_PASSWORD_INT=...
+export E2E_ADMIN_LOGIN_INT=...
+export E2E_ADMIN_PASSWORD_INT=...
+export E2E_BASE_URL=https://skills.int.<your-domain>
+
+# 2. .env.local (gitignored) sourced before npm scripts
+source .env.local
+
+# 3. dotenv-cli wrapper
+npx dotenv -e .env.local -- npm run test:e2e
+
+# 4. Pull the keys from the central secret via the bastion (read-only audit)
+./scripts/secrets/audit-e2e-keys.sh
+</code></pre>
+<p>Useful npm scripts (defined in <code>wise-skills-react/package.json</code>):</p>
+<pre><code class="language-bash">npm run test:e2e            # full suite
+npm run test:e2e:public     # public-only (no AWS dependency)
+npm run test:e2e:user       # authenticated user journeys
+npm run test:e2e:admin      # authenticated admin journeys
+npm run test:e2e:a11y       # accessibility audits
+npm run test:e2e:ui         # interactive Playwright UI
+npm run test:e2e:debug      # pwdebug runner
+npm run test:e2e:headed     # headed Chromium
+npm run test:e2e:report     # open the last HTML report
+</code></pre>
+<p>To replay a single failing test:</p>
+<pre><code class="language-bash">npx playwright test tests/e2e/admin/audit.spec.ts --project=admin --headed
+</code></pre>
+<h2>PROD read-only safeguards</h2>
+<p>The PROD smoke job runs against the live customer environment, so we apply
+several layered guards:</p>
+<ol>
+<li><strong>GitHub Environment gate</strong>. The <code>playwright-prod-smoke</code> job declares
+   <code>environment: production-smoke</code>, which is configured with <strong>required
+   reviewers</strong> and (recommended) a <code>main</code>-only branch protection. The job
+   cannot start &mdash; and therefore cannot assume any AWS role &mdash; until a
+   reviewer approves the run from the GitHub UI.</li>
+<li><strong>Read-only Keycloak accounts</strong>. <code>_prod_e2e_readonly</code> user and admin
+   accounts have no write permissions &mdash; even if the test code submits a
+   mutation, the API rejects it.</li>
+<li><strong>HTTP route guard</strong>. The custom <code>test</code> fixture in
+   <code>wise-skills-react/tests/e2e/_guards.ts</code> registers
+   <code>page.route('**/api/**', ...)</code> and <strong>throws</strong> on any non-<code>GET</code>/<code>HEAD</code>/
+   <code>OPTIONS</code> request when both <code>E2E_ENV=PROD</code> and <code>E2E_READ_ONLY=true</code>. Any
+   attempted mutation surfaces immediately as a test failure.</li>
+<li><strong><code>@smoke</code> selector</strong>. The PROD job only runs tests tagged
+   <code>{ tag: '@smoke' }</code>. We have audited every tagged test to confirm it does
+   not call any mutating API.</li>
+<li><strong>a11y excluded</strong>. The <code>a11y</code> project is not part of the PROD selector to
+   avoid burst traffic on the production stack.</li>
+<li><strong>30-day artifact retention</strong> on the Playwright report so any incident can
+   be investigated after the fact.</li>
+</ol>
+<h2>Incident runbook</h2>
+<p>When <code>playwright-prod-smoke</code> fails, follow this sequence:</p>
+<h3>1. Confirm failure scope</h3>
+<ul>
+<li>Open the workflow run in GitHub Actions.</li>
+<li>Download the <code>playwright-report-prod-smoke</code> artifact.</li>
+<li>Inspect <code>playwright-report/index.html</code> for the failing test name, screenshot,
+  trace and <code>junit.xml</code>.</li>
+</ul>
+<h3>2. Reproduce on UAT first</h3>
+<pre><code class="language-bash"># Trigger the UAT job from the GitHub UI:
+gh workflow run e2e.yaml -f target_env=UAT
+</code></pre>
+<p>UAT shares the same code path; if it reproduces there, the bug is in the
+application or the API and not in PROD configuration drift.</p>
+<h3>3. Investigate PROD via the bastion</h3>
+<p>All AWS / kubectl access goes through the bastion
+<code><bastion-host></code> (passwordless SSH).</p>
+<pre><code class="language-bash">ssh <bastion-host> '
+  set -e
+  aws eks update-kubeconfig --region eu-west-1 --name w-c-eks-f-prod
+  kubectl --context w-c-eks-f-prod get pods -n skills-portal -o wide
+  kubectl --context w-c-eks-f-prod logs -n skills-portal \
+    -l app.kubernetes.io/name=skills-portal --tail=200
+'
+</code></pre>
+<p>For OIDC issues, check Keycloak directly via the W-Tools console.</p>
+<h3>4. Decide the next action</h3>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API 5xx on <code>/api/skills</code></td>
+<td>Page on-call, see <code>docs/operations.md</code> rollback procedure</td>
+</tr>
+<tr>
+<td>Login redirect loop</td>
+<td>Verify Keycloak realm + redirect URIs, no rollback yet</td>
+</tr>
+<tr>
+<td>Read-only account no longer has access</td>
+<td>Open a Keycloak ticket; mute the affected <code>@smoke</code> test for the run, retry</td>
+</tr>
+<tr>
+<td>Selector drifted (UI change in PROD)</td>
+<td>Open a fix PR &mdash; INT/UAT must catch this before the next deploy</td>
+</tr>
+</tbody>
+</table>
+<h3>5. Communicate</h3>
+<ul>
+<li>Open an issue in <code>essensys-hub/skills-portal</code> with label <code>prod-incident</code>,
+  attach the Playwright report URL.</li>
+<li>Once root cause is known, update this runbook with the new symptom row.</li>
+</ul>
+<h2>Commands cheat sheet</h2>
+<pre><code class="language-bash"># === Local development ===
+npm run test:e2e:public                              # smoke without auth
+npm run test:e2e -- --grep @smoke                    # local smoke parity
+npm run test:e2e -- --project=user --reporter=list   # user scope, console only
+
+# === CI invocation ===
+gh workflow run e2e.yaml                             # default INT
+gh workflow run e2e.yaml -f target_env=UAT
+gh workflow run e2e.yaml -f target_env=PROD          # requires reviewer approval
+
+# === Secrets management (operator only, via bastion) ===
+./scripts/secrets/setup-e2e-keys.sh .env             # additive merge
+./scripts/secrets/audit-e2e-keys.sh                  # lengths only, never values
+</code></pre>
+<h2>Report archival on S3 + admin portal</h2>
+<p>After every Playwright run, the workflow archives the <strong>full</strong> report tree
+(HTML SPA, <code>data/</code> videos/traces/screenshots, <code>trace/</code> viewer, <code>junit.xml</code>)
+plus a fresh <code>meta.json</code> to the per-environment S3 bucket
+<code>ewise-skills-&lt;env&gt;</code> under the prefix
+<code>skills-portal/&lt;env&gt;/e2e-reports/&lt;github.run_id&gt;/</code>. The composite action
+<code>.github/actions/archive-e2e-report-s3/action.yml</code> runs after
+<code>Upload Playwright report</code> in each of the three jobs.</p>
+<h3>S3 layout</h3>
+<pre><code>s3://ewise-skills-&lt;env&gt;/skills-portal/&lt;env&gt;/e2e-reports/&lt;run_id&gt;/
+├── index.html                 # Playwright SPA entry point
+├── junit.xml                  # parsed by API + admin UI
+├── meta.json                  # schema_version=1, see below
+├── data/
+│   └── &lt;hash&gt;.{webm,zip,png}  # videos / traces / screenshots
+└── trace/                     # Trace Viewer SPA (when produced)
+</code></pre>
+<p><code>meta.json</code> (schema_version=1) carries <code>run_id</code>, <code>env</code>, <code>branch</code>, <code>sha</code>,
+<code>triggered_by</code>, <code>started_at</code>, <code>ended_at</code>, <code>duration_seconds</code>,
+<code>conclusion</code> (success/failure/cancelled), the JUnit summary
+(<code>tests</code>/<code>failures</code>/<code>skipped</code>/<code>errors</code>), and the GitHub Actions HTML URL.</p>
+<h3>Source of credentials</h3>
+<p>Both the CI uploader and the API pod use the <strong>same static IAM-user keys</strong>
+already used by the Backups feature, fetched from the central secret:</p>
+<ul>
+<li><code>wise-application-skills.ACCESS_KEY_S3_&lt;INT|UAT|PROD&gt;</code></li>
+<li><code>wise-application-skills.SECRET_KEY_S3_&lt;INT|UAT|PROD&gt;</code></li>
+</ul>
+<p>The composite action assumes the existing <code>App_InfraRunner_Github_Role</code>
+via OIDC only to read the secret, then drops <code>AWS_SESSION_TOKEN</code> for the
+S3 calls so awscli falls back to the static-user identity. The override
+is scoped to a single shell &mdash; never written to <code>$GITHUB_ENV</code> &mdash; so
+subsequent steps still see the OIDC session.</p>
+<h3>Operator action &mdash; extending the IAM-user inline policy (one ticket per env)</h3>
+<p>The IAM user behind <code>ACCESS_KEY_S3_&lt;ENV&gt;</code> already holds
+<code>s3:{Put,Get,Delete,List,Head}*</code> on
+<code>arn:aws:s3:::ewise-skills-&lt;env&gt;/skills-portal/&lt;env&gt;/backups/*</code>.
+We need to extend that to the new <code>e2e-reports/*</code> prefix. <strong>No change
+to <code>App_InfraRunner_Github_Role</code> is required</strong> &mdash; the OIDC role only
+reads the secret.</p>
+<pre><code class="language-diff">       &quot;Resource&quot;: [
+         &quot;arn:aws:s3:::ewise-skills-&lt;env&gt;&quot;,
+-        &quot;arn:aws:s3:::ewise-skills-&lt;env&gt;/skills-portal/&lt;env&gt;/backups/*&quot;
++        &quot;arn:aws:s3:::ewise-skills-&lt;env&gt;/skills-portal/&lt;env&gt;/backups/*&quot;,
++        &quot;arn:aws:s3:::ewise-skills-&lt;env&gt;/skills-portal/&lt;env&gt;/e2e-reports/*&quot;
+       ]
+</code></pre>
+<p>Until the operator confirms each environment, the workflow step is
+marked <code>continue-on-error: true</code> so a missing policy never regresses
+the workflow's green status. Once confirmed, remove the flag &mdash; see
+the inline <code># TODO</code> comments in <code>.github/workflows/e2e.yaml</code>.</p>
+<h3>Admin portal</h3>
+<p>The new admin pages are mounted at:</p>
+<ul>
+<li><code>/admin/e2e-reports</code> &mdash; table of archived runs across INT/UAT/PROD,
+  with env filter, summary chips, and a delete action.</li>
+<li><code>/admin/e2e-reports/&lt;run_id&gt;</code> &mdash; run header, <strong>Summary</strong> tab (junit
+  summary cards + per-testcase table) and <strong>Full report</strong> tab
+  (Playwright SPA embedded in an iframe served by
+  <code>GET /api/e2e-reports/&lt;run_id&gt;/file/index.html</code>).</li>
+</ul>
+<p>When the IAM-user inline policy has not been extended yet, the API
+returns <code>200 + {runs: [], warning: &quot;s3_access_not_configured&quot;}</code> for the
+list endpoint and <code>503</code> for the file endpoints. The admin UI surfaces a
+friendly banner instead of an error toast.</p>
+<h3>Manual cleanup</h3>
+<p>There is no automatic retention. To delete a single run, use the admin
+UI <strong>Delete</strong> button (typed run-id confirmation) or:</p>
+<pre><code class="language-bash">aws s3 rm \
+  &quot;s3://ewise-skills-&lt;env&gt;/skills-portal/&lt;env&gt;/e2e-reports/&lt;run_id&gt;/&quot; \
+  --recursive
+</code></pre>
+<p>To bulk-delete every run older than 30 days, list, filter, and pipe to
+<code>aws s3 rm</code>:</p>
+<pre><code class="language-bash">aws s3 ls &quot;s3://ewise-skills-&lt;env&gt;/skills-portal/&lt;env&gt;/e2e-reports/&quot; \
+  | awk -v d=&quot;$(date -u -d '30 days ago' +%Y-%m-%d)&quot; '$1 &lt; d {print $2}' \
+  | while read -r p; do
+      aws s3 rm \
+        &quot;s3://ewise-skills-&lt;env&gt;/skills-portal/&lt;env&gt;/e2e-reports/${p}&quot; \
+        --recursive
+    done
+</code></pre>
+<h2>References</h2>
+<ul>
+<li>Workflow: <code>.github/workflows/e2e.yaml</code></li>
+<li>Composite action: <code>.github/actions/archive-e2e-report-s3/action.yml</code></li>
+<li>Backend service: <code>services/e2e_reports_service.py</code></li>
+<li>Backend routes: <code>api/routes/e2e_reports.py</code></li>
+<li>React list page: <code>wise-skills-react/src/pages/admin/E2EReportsPage.tsx</code></li>
+<li>React detail page: <code>wise-skills-react/src/pages/admin/E2EReportDetailPage.tsx</code></li>
+<li>Playwright config: <code>wise-skills-react/playwright.config.ts</code></li>
+<li>Auth setup: <code>wise-skills-react/tests/auth/{user,admin}.setup.ts</code></li>
+<li>PROD HTTP guard: <code>wise-skills-react/tests/e2e/_guards.ts</code></li>
+<li>Secret helpers: <code>scripts/secrets/</code></li>
+<li>Bastion skill: <code>.cursor/skills/<org>-w-tools-bastion/SKILL.md</code></li>
+<li>Single-secret enforcement rule: <code>.cursor/rules/<org>-w-tools-bastion.mdc</code></li>
+<li>Accessibility README: <code>wise-skills-react/tests/e2e/a11y/README.md</code></li>
+<li>OpenSpec changes: <code>openspec/changes/e2e-non-regression-suite/</code>,
+  <code>openspec/changes/e2e-reports-archive/</code></li>
+</ul>

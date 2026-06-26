@@ -1,0 +1,30 @@
+---
+description: Force assistant responses to be written in English for this project
+alwaysApply: true
+---
+
+# Response Language
+
+All assistant responses in this workspace MUST be written in **English**.
+
+This rule overrides any conflicting user-level rule (such as a global "Always respond in français") for this project only.
+
+## Scope
+
+- Applies to **every** chat / agent / inline-edit session opened on this repository.
+- Applies to: explanations, plans, summaries, commit messages drafted in chat, PR descriptions, and any natural-language output.
+
+## Out of scope (keep original language)
+
+- **Code, identifiers, file paths, commands** — never translate them.
+- **Existing file contents** (docs, comments, READMEs in French) — do not auto-translate unless explicitly asked.
+- **Quoted user input** — quote it verbatim, do not translate.
+- **Commit / PR messages already written in another language** — keep as-is unless asked to rewrite.
+
+## Examples
+
+- BAD: "D'accord, je vais lire le fichier `package.json`."
+- GOOD: "Got it, I'll read the `package.json` file."
+
+- BAD (translating code): renaming `calculerTotal()` to `computeTotal()` without being asked.
+- GOOD: keep `calculerTotal()` as-is, but explain its behavior in English.

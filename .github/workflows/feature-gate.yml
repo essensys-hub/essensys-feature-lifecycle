@@ -1,0 +1,131 @@
+name: Feature Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - int
+      - uat
+      - prod
+    # No paths filter on this repo: wise-infra-feature-lifecycle is the
+    # source-of-truth mirror of every artefact published in profile id=2,
+    # so every PR must clear the gate, even doc-only or workflow-only changes.
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  feature-gate:
+    name: Feature Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install validator dependencies
+        run: python3 -m pip install --disable-pip-version-check jsonschema
+
+      - name: Validate feature schema
+        id: schema
+        run: |
+          mkdir -p .artifacts
+          set +e
+          python3 scripts/feature_lifecycle/validate_feature_manifests.py \
+            > .artifacts/feature-schema.txt 2>&1
+          exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Run repository checks
+        id: repo
+        run: |
+          mkdir -p .artifacts
+          set +e
+          python3 scripts/feature_lifecycle/check_feature_gate.py --strict --mirror-repo \
+            > .artifacts/feature-gate.md 2>&1
+          exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Build PR comment
+        id: comment
+        run: |
+          mkdir -p .artifacts
+          {
+            echo "<!-- feature-gate -->"
+            echo "# Feature Gate"
+            echo
+            echo "> Status: blocking mode. Schema errors block merge; missing downstream app paths are warnings in mirror-repo mode."
+            echo
+            echo "## Schema validation"
+            echo
+            echo '```text'
+            cat .artifacts/feature-schema.txt
+            echo '```'
+            echo
+            echo "## Repository checks"
+            echo
+            cat .artifacts/feature-gate.md
+          } > .artifacts/feature-gate-comment.md
+          echo "comment_path=.artifacts/feature-gate-comment.md" >> "$GITHUB_OUTPUT"
+
+      - name: Update PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          COMMENT_PATH: ${{ steps.comment.outputs.comment_path }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs");
+            const marker = "<!-- feature-gate -->";
+            const issue_number = context.issue.number;
+            const body = fs.readFileSync(process.env.COMMENT_PATH, "utf8");
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.type === "Bot" && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body
+              });
+            }
+
+      - name: Upload feature gate artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-gate
+          path: .artifacts/
+          retention-days: 14
+
+      - name: Fail on blocking manifest issues
+        run: |
+          if [ "${{ steps.schema.outputs.exit_code }}" != "0" ]; then
+            echo "Feature manifest schema validation failed."
+            exit 1
+          fi
+          if [ "${{ steps.repo.outputs.exit_code }}" != "0" ]; then
+            echo "Feature gate repository checks failed."
+            exit 1
+          fi

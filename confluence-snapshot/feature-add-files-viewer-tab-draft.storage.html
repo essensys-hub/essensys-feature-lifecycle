@@ -1,0 +1,88 @@
+<p><strong>Status:</strong> Draft generated from pull request automation.</p>
+<p><strong>PR:</strong> #144</p>
+<p><strong>Branch:</strong> uat</p>
+<p><strong>Feature id:</strong> add-files-viewer-tab</p>
+<h1>Files Viewer</h1>
+<h2>Objectif</h2>
+<p>Permettre &agrave; tout utilisateur autoris&eacute; &agrave; voir un skill de <strong>consulter en lecture seule</strong> les fichiers d'une version (fichier principal, fichiers texte auxiliaires, fichiers binaires) sans passer par la page d'&eacute;dition. &Eacute;value le contenu avant installation ou t&eacute;l&eacute;chargement.</p>
+<h2>O&ugrave; le trouver</h2>
+<p>Sur la page d&eacute;tail d'un skill (<code>/skill/&lt;id&gt;</code>), un onglet <strong>&laquo; Files &raquo;</strong> est d&eacute;sormais affich&eacute; entre <code>Overview</code> et <code>Install</code>. Ordre final des onglets :</p>
+<pre><code>Overview &middot; Files &middot; Install &middot; Comments &middot; Versions
+</code></pre>
+<p>L'onglet est visible pour tout utilisateur ayant acc&egrave;s &agrave; la page d&eacute;tail &mdash; la visibilit&eacute; (public / private / team) reste filtr&eacute;e c&ocirc;t&eacute; backend par <code>GET /api/versions/&lt;id&gt;</code>.</p>
+<h2>Fonctionnalit&eacute;s</h2>
+<table>
+<thead>
+<tr>
+<th>&Eacute;l&eacute;ment</th>
+<th>Comportement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S&eacute;lecteur de version</strong></td>
+<td>Liste toutes les versions du skill, pr&eacute;s&eacute;lectionne <code>current_version</code>. Affiche le pr&eacute;fixe 8 caract&egrave;res de <code>content_hash_sha256</code> pour tra&ccedil;abilit&eacute;.</td>
+</tr>
+<tr>
+<td><strong>Arborescence</strong></td>
+<td>Vue lecture seule de tous les fichiers de la version (texte + binaires). Aucune action de cr&eacute;ation / renommage / suppression / upload n'est rendue.</td>
+</tr>
+<tr>
+<td><strong>Viewer Markdown</strong></td>
+<td><code>SKILL.md</code>, <code>.md</code>, <code>.mdc</code> sont rendus en HTML styl&eacute;.</td>
+</tr>
+<tr>
+<td><strong>Viewer code</strong></td>
+<td><code>.json</code>, <code>.yaml</code>, <code>.yml</code>, <code>.sh</code>, <code>.py</code>, <code>.ts</code>, <code>.tsx</code>, <code>.js</code>, <code>.jsx</code>, <code>.sql</code>, <code>.html</code>, <code>.css</code> sont affich&eacute;s avec coloration syntaxique.</td>
+</tr>
+<tr>
+<td><strong>Viewer texte brut</strong></td>
+<td>Toute autre extension texte s'affiche dans un bloc monospace.</td>
+</tr>
+<tr>
+<td><strong>Viewer binaire</strong></td>
+<td>Images (PNG/JPG/GIF/WEBP/SVG), PDF, audio (MP3/WAV/OGG&hellip;), vid&eacute;o (MP4/WEBM/MOV&hellip;) sont pr&eacute;visualis&eacute;s en ligne via data-URI.</td>
+</tr>
+<tr>
+<td><strong>Carte info binaire</strong></td>
+<td>Pour les binaires non pr&eacute;visualisables (<code>.zip</code>, <code>.tar</code>, etc.), affiche nom + taille + bouton <strong>Download</strong>.</td>
+</tr>
+<tr>
+<td><strong>Download par fichier</strong></td>
+<td>Bouton <strong>Download</strong> disponible sur chaque fichier (texte ou binaire).</td>
+</tr>
+<tr>
+<td><strong>Download ZIP</strong></td>
+<td>Raccourci vers <code>/api/skills/&lt;id&gt;/download?tool=portal&amp;version_id=&lt;id&gt;</code> pour r&eacute;cup&eacute;rer toute la version.</td>
+</tr>
+</tbody>
+</table>
+<h2>Garanties de lecture seule</h2>
+<ul>
+<li>L'onglet <strong>n'appelle aucun verb HTTP autre que <code>GET</code></strong> &mdash; pas de <code>useMutation</code>, pas de <code>POST</code>/<code>PATCH</code>/<code>PUT</code>/<code>DELETE</code> accessible.</li>
+<li>Le composant <code>SkillFileTree</code> est mont&eacute; avec <code>readOnly={true}</code> : les actions d'&eacute;dition (rename, delete, create, upload) ne sont pas rendues dans le DOM.</li>
+<li>Un &eacute;diteur autoris&eacute; continue d'utiliser le bouton <strong>Edit</strong> (dans l'en-t&ecirc;te de la page d&eacute;tail) pour acc&eacute;der &agrave; l'interface d'&eacute;dition <code>/skill/&lt;id&gt;/edit</code>.</li>
+</ul>
+<h2>Performance</h2>
+<p>Le composant <code>SkillFilesTab</code> est charg&eacute; via <code>React.lazy</code> + <code>Suspense</code> : le chunk n'est t&eacute;l&eacute;charg&eacute; que lorsque l'utilisateur clique pour la premi&egrave;re fois sur l'onglet &laquo; Files &raquo;. Les versions d&eacute;j&agrave; consult&eacute;es sont mises en cache par TanStack Query.</p>
+<h2>Internationalisation</h2>
+<p>L'onglet est traduit dans les 6 langues support&eacute;es : <strong>fr, en, de, es, zh, ja</strong>. Cl&eacute;s i18n :</p>
+<ul>
+<li><code>skillDetail.tab.files</code></li>
+<li><code>skillFiles.version.label</code>, <code>skillFiles.version.hash</code></li>
+<li><code>skillFiles.empty</code>, <code>skillFiles.loading</code>, <code>skillFiles.error</code></li>
+<li><code>skillFiles.action.copyPath</code>, <code>skillFiles.action.download</code>, <code>skillFiles.action.downloadZip</code></li>
+</ul>
+<h2>Accessibilit&eacute;</h2>
+<ul>
+<li>Navigation clavier compl&egrave;te (Tab &rarr; version selector &rarr; tree &rarr; viewer actions).</li>
+<li>Anneau de focus visible sur tous les &eacute;l&eacute;ments interactifs.</li>
+<li>Zones <code>aria-live=&quot;polite&quot;</code> sur le viewer pour annoncer les changements d'&eacute;tat (loading, error).</li>
+<li>Tree expos&eacute; avec <code>role=&quot;tree&quot;</code> via <code>SkillFileTree</code>.</li>
+</ul>
+<h2>Liens</h2>
+<ul>
+<li>OpenSpec change : <a href="../../openspec/changes/add-files-viewer-tab/proposal.md"><code>add-files-viewer-tab</code></a></li>
+<li>Composant : <code>wise-skills-react/src/pages/skills/SkillFilesTab.tsx</code></li>
+<li>Tests : <code>wise-skills-react/src/pages/skills/__tests__/SkillFilesTab.test.tsx</code></li>
+</ul>

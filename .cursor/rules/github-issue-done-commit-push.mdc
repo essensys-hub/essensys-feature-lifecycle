@@ -1,0 +1,21 @@
+---
+description: À la clôture d’une issue GitHub — commit et push sur la branche courante
+alwaysApply: true
+---
+
+# Issue GitHub terminée → commit + push
+
+Lorsqu’une **issue GitHub est considérée comme terminée** (implémentation livrée, prête à être fermée ou déjà fermée côté suivi) :
+
+1. **Vérifier** `git status` : tout le travail lié à l’issue doit être inclus (pas de fichiers oubliés hors intention).
+2. **Commit** sur la **branche courante** (celle sur laquelle le travail a été fait — ex. `uat`, `feature/…`), avec un message explicite ; référencer l’issue si utile : `Closes #123` ou `Refs #123` dans le corps du message.
+3. **Push** vers `origin` sur **cette même branche** :  
+   `git push origin HEAD`  
+   Si le nom de branche entre en conflit avec un tag (ex. `uat`), utiliser :  
+   `git push origin refs/heads/<branche>:refs/heads/<branche>`
+
+Ne pas basculer sur une autre branche ni fusionner sans demande explicite : l’objectif est de **publier le travail de l’issue sur la branche en cours**.
+
+4. **Fermer l’issue sur GitHub** une fois le travail réellement livré :  
+   `gh issue close <numéro> --repo <org/repo> --comment "…résumé + hash commit…"`  
+   Si le périmètre n’est **pas** terminé (ex. sous-tâche admin restante), **ne pas fermer** : laisser l’issue ouverte et ajouter un commentaire d’état.

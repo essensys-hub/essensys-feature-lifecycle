@@ -1,0 +1,31 @@
+{
+  "pages": [
+    {
+      "page_id": "67077603781",
+      "title": "[DRAFT] Config artifact type across API, CLIs and UI",
+      "space_key": "WISE",
+      "version": 3,
+      "parent_id": "66624620340",
+      "label": "feature-add-config-artifact-type-draft",
+      "url": "https://<your-org>.atlassian.net/wiki/spaces/WISE/pages/67077603781"
+    },
+    {
+      "page_id": "67077341665",
+      "title": "[DRAFT] Files Viewer tab on the skill detail page",
+      "space_key": "WISE",
+      "version": 3,
+      "parent_id": "66624620340",
+      "label": "feature-add-files-viewer-tab-draft",
+      "url": "https://<your-org>.atlassian.net/wiki/spaces/WISE/pages/67077341665"
+    },
+    {
+      "page_id": "67077702092",
+      "title": "[DRAFT] Archive Playwright reports to S3 and expose them in the admin UI",
+      "space_key": "WISE",
+      "version": 4,
+      "parent_id": "66624620340",
+      "label": "feature-e2e-reports-archive-draft",
+      "url": "https://<your-org>.atlassian.net/wiki/spaces/WISE/pages/67077702092"
+    }
+  ]
+}

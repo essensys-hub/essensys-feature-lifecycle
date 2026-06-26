@@ -1,0 +1,118 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "e2e-reports-archive",
+  "title": "Archive Playwright reports to S3 and expose them in the admin UI",
+  "status": "in-progress",
+  "owner": "I0438973",
+  "jira": {
+    "issue": "TBD",
+    "test_plan": null
+  },
+  "git": {
+    "branch": "feat/e2e-reports-archive",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "e2e-reports-archive",
+    "path": "openspec/changes/e2e-reports-archive",
+    "proposal": "openspec/changes/e2e-reports-archive/proposal.md",
+    "design": "openspec/changes/e2e-reports-archive/design.md",
+    "tasks": "openspec/changes/e2e-reports-archive/tasks.md",
+    "specs": [
+      "openspec/changes/e2e-reports-archive/specs/e2e-reports-archive-api/spec.md",
+      "openspec/changes/e2e-reports-archive/specs/e2e-reports-archive-pipeline/spec.md",
+      "openspec/changes/e2e-reports-archive/specs/e2e-reports-admin-ui/spec.md"
+    ]
+  },
+  "implementation": {
+    "paths": [
+      ".github/actions/archive-e2e-report-s3/action.yml",
+      ".github/workflows/e2e.yaml",
+      "api/routes/e2e_reports.py",
+      "k8s/skills-portal_application.yml.j2",
+      "services/e2e_reports_service.py",
+      "tests/test_e2e_reports_routes.py",
+      "tests/test_e2e_reports_service.py",
+      "wise-skills-react/src/api/admin.ts",
+      "wise-skills-react/src/api/types.ts",
+      "wise-skills-react/src/components/layout/AdminShell.tsx",
+      "wise-skills-react/src/pages/admin/E2EReportDetailPage.tsx",
+      "wise-skills-react/src/pages/admin/E2EReportsPage.tsx",
+      "wise-skills-react/src/pages/admin/__tests__/E2EReportsPage.test.tsx",
+      "wise-skills-react/src/router.tsx"
+    ],
+    "primary_surface": "mixed"
+  },
+  "userguide": {
+    "pages": [
+      "docs/testing/e2e.md",
+      "docs/architecture/security.md",
+      "docs/UserGuideAdmin.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [
+      "admin.e2eReports.empty",
+      "admin.e2eReports.error",
+      "admin.e2eReports.filters.env",
+      "admin.nav.e2eReports"
+    ],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "pytest": [
+      "tests/test_e2e_reports_routes.py",
+      "tests/test_e2e_reports_service.py"
+    ],
+    "testthat": [],
+    "coverage_must_test": [
+      "every E2E run archives the full Playwright report tree to S3",
+      "admin users can list archived runs and open a report detail view",
+      "the API streams report files safely and supports range requests"
+    ],
+    "smoke_tags": []
+  },
+  "confluence": {
+    "space": "WISE",
+    "parent_page": "66624620340",
+    "template": "feature-user-guide",
+    "draft_page_id": "67077702092",
+    "published_page_id": null
+  },
+  "release": {
+    "changelog_entry": "Archived Playwright reports to S3 and surfaced them in the admin UI.",
+    "target_tag": null,
+    "surfaces": [
+      "api",
+      "react-admin",
+      "ci",
+      "ops"
+    ],
+    "paths": [
+      "CHANGELOG.md",
+      "changelogs/api/en.md",
+      "changelogs/api/fr.md",
+      "changelogs/react-admin/en.md",
+      "changelogs/react-admin/fr.md"
+    ]
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": null,
+    "owner_security": "I0438973"
+  }
+}

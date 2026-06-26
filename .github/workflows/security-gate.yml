@@ -1,0 +1,227 @@
+name: Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - int
+      - uat
+      - prod
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  GITLEAKS_VERSION: "8.24.2"
+
+jobs:
+  security-gate:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Dependency review (PR only)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        id: dependency-review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install security tooling
+        run: |
+          python3 -m pip install --disable-pip-version-check pip-audit bandit
+
+      - name: Prepare artifacts directory
+        run: mkdir -p .artifacts/security-gate
+
+      - name: Secret scan (gitleaks)
+        id: gitleaks
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks dir . \
+            --config .gitleaks.toml \
+            --report-format json \
+            --report-path .artifacts/security-gate/gitleaks.json \
+            --redact \
+            --no-banner
+
+      - name: Dependency audit (npm)
+        id: npm-audit
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          for target in wise-skills-react cli; do
+            if [ -f "$target/package-lock.json" ]; then
+              (
+                cd "$target"
+                npm audit --json > "../.artifacts/security-gate/${target//\//-}-npm-audit.json"
+              ) || true
+            fi
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path(".artifacts/security-gate")
+          combined = {"metadata": {"vulnerabilities": {}}, "vulnerabilities": {}}
+          for path in root.glob("*-npm-audit.json"):
+              payload = json.loads(path.read_text(encoding="utf-8"))
+              vulns = payload.get("metadata", {}).get("vulnerabilities", {})
+              for key, value in vulns.items():
+                  combined["metadata"]["vulnerabilities"][key] = (
+                      combined["metadata"]["vulnerabilities"].get(key, 0) + int(value or 0)
+                  )
+              for name, detail in payload.get("vulnerabilities", {}).items():
+                  combined["vulnerabilities"][f"{path.stem}:{name}"] = detail
+          (root / "npm-audit.json").write_text(json.dumps(combined, indent=2), encoding="utf-8")
+          PY
+
+      - name: Dependency audit (pip)
+        id: pip-audit
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          for target in requirements.txt api/requirements-api.txt; do
+            if [ -f "$target" ]; then
+              python3 -m pip_audit -r "$target" --format json \
+                > ".artifacts/security-gate/$(echo "$target" | tr '/' '-')".json || true
+            fi
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path(".artifacts/security-gate")
+          merged = {"dependencies": []}
+          for path in root.glob("*requirements*.json"):
+              payload = json.loads(path.read_text(encoding="utf-8"))
+              merged["dependencies"].extend(payload.get("dependencies", []))
+          (root / "pip-audit.json").write_text(json.dumps(merged, indent=2), encoding="utf-8")
+          PY
+
+      - name: CVE / SCA + IaC scan (Trivy)
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: .artifacts/security-gate/trivy.json
+          severity: CRITICAL,HIGH,MEDIUM
+          scanners: vuln,misconfig
+          ignore-unfixed: true
+          exit-code: "0"
+
+      - name: Python security lint (bandit)
+        id: bandit
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          bandit -r api services scripts/feature_lifecycle -ll -f json \
+            -o .artifacts/security-gate/bandit.json || true
+
+      - name: React security lint (eslint-plugin-security)
+        id: eslint-security
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          cd wise-skills-react
+          npm install --no-save eslint-plugin-security @typescript-eslint/parser
+          npx eslint -c eslint.security.config.mjs src \
+            -f json \
+            -o ../.artifacts/security-gate/eslint-security.json || true
+
+      - name: Summarize security gate
+        id: summary
+        run: |
+          set +e
+          python3 scripts/feature_lifecycle/summarize_security_gate.py --json \
+            > .artifacts/security-gate/summary.json
+          exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path(".artifacts/security-gate/summary.json").read_text(encoding="utf-8"))
+          Path(".artifacts/security-gate/comment.md").write_text(
+              payload["markdown"] + "\n",
+              encoding="utf-8",
+          )
+          PY
+          exit 0
+
+      - name: Update PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          COMMENT_PATH: .artifacts/security-gate/comment.md
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs");
+            const marker = "<!-- security-gate -->";
+            const issue_number = context.issue.number;
+            const body = fs.readFileSync(process.env.COMMENT_PATH, "utf8");
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.type === "Bot" && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body
+              });
+            }
+
+      - name: Upload security artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-gate
+          path: .artifacts/security-gate/
+          retention-days: 14
+
+      - name: Fail on blocking findings
+        run: |
+          if [ "${{ steps.summary.outputs.exit_code }}" != "0" ]; then
+            echo "Critical or High security findings detected (gitleaks / Trivy / deps / lint)."
+            echo "Use the 'security-gate-triage' skill, Trivy report, and Dependabot alerts to remediate them."
+            exit 1
+          fi

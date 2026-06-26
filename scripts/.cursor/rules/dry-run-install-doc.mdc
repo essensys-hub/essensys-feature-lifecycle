@@ -1,0 +1,56 @@
+---
+description: Keep dry-run Installation Procedure docs under doc_install/dry_run/ at maximum operational detail and in sync with paired GxP install procedures and install/deploy/publish workflows. Apply when touching doc_install, install/publish/deploy workflows, or publish/install scripts.
+globs:
+  - "doc_install/**/*.md"
+  - "doc_install/dry_run/**/*.md"
+  - ".github/workflows/**/*install*.y*ml"
+  - ".github/workflows/**/*publish*.y*ml"
+  - ".github/workflows/**/*deploy*.y*ml"
+  - "scripts/**/*install*.py"
+  - "scripts/**/*publish*.py"
+alwaysApply: false
+---
+
+# Dry-Run Install Documentation
+
+Paired dry-run docs are **preparatory** (see `gxp-exec`): repeatable, `MODE: DRY-RUN` labelled, **never** generate deviations.
+
+## Pairing requirement
+
+- Every GxP Installation Procedure at `doc_install/eWise - Installation Procedure - <Component> - github.md` (excluding `dry_run/`) **must** have a matching dry-run doc at `doc_install/dry_run/eWise - Dry-Run Installation Procedure - <Component> - github.md`.
+- Component names must match between paired files.
+
+## Same-PR maintenance
+
+When changing any of the following, **update the paired dry-run doc in the same PR** (or state in the PR description why not):
+
+- Install, deploy, or publish GitHub workflow under `.github/workflows/`
+- GxP Installation Procedure under `doc_install/`
+- Install or publish script under `scripts/`
+
+## Minimum detail (dry-run docs)
+
+Every dry-run document **must** include:
+
+- `MODE: DRY-RUN` banner at the top
+- Link to the paired GxP Installation Procedure
+- Full `workflow_dispatch` inputs table (name, type, default, required, description)
+- **Pipeline Mirror**: one entry per workflow job and step (match source YAML)
+- **Expected Actions**: per-step dry-run log pattern (e.g. `[dry-run] would ...`)
+- **Mutation Guard**: table of systems that must not change during dry-run
+- **Operator Verification Checklist**: numbered post-run checks
+
+## Detail floor
+
+- Do **not** remove step-level detail when the source workflow still contains that step.
+- New workflow job or step → add matching rows in Pipeline Mirror, Expected Actions, and Mutation Guard if applicable.
+- Dry-run docs are **more detailed** than GxP install procedures, not summaries of them.
+
+## Skill to use
+
+Use `dry-run-install-procedure` to create or refresh paired dry-run documentation.
+
+## GxP boundary
+
+- Dry-run documentation updates are **not** deviations.
+- Deviations apply only to GxP **pre-requisites** and **run/install** phases (`gxp-exec`).

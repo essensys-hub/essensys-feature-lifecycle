@@ -1,0 +1,124 @@
+# =============================================================================
+# Publish wise-feature-lifecycle profile to Skills Portal
+# -----------------------------------------------------------------------------
+# AWS wiring (configure per deployment):
+#
+# - IAM role  : arn:aws:iam::<account>:role/<github-actions-role>
+# - Secret    : arn:aws:secretsmanager:<region>:<account>:secret:
+#               essensys-feature-lifecycle-<suffix>
+#               Holds env-scoped pairs:
+#                   SKILLS_API_HOST_{INT,UAT,PROD}
+#                   SKILLS_API_KEY_{INT,UAT,PROD}
+#               plus the Confluence triplet used by confluence-sync.yml.
+#
+# Environment routing
+# - input `environment` selects which SKILLS_API_HOST_<ENV> / KEY_<ENV> pair
+#   is loaded from the secret.
+# - GitHub Environments uat and prod gate the job with required reviewers
+#   so a PROD publish needs an explicit human approval click.
+# =============================================================================
+name: Publish wise-feature-lifecycle
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target Skills Portal environment"
+        required: true
+        default: "int"
+        type: choice
+        options:
+          - int
+          - uat
+          - prod
+      version:
+        description: "Profile and artifact version"
+        required: true
+        default: "1.0.0"
+        type: string
+      dry_run:
+        description: "Do not publish, only print actions"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+  CENTRAL_SECRET_ID: essensys-feature-lifecycle
+  IAM_ROLE: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.GITHUB_ACTIONS_ROLE }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    container: python:3.11-slim
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq and AWS CLI
+        run: |
+          apt-get update -y
+          apt-get install -y --no-install-recommends jq curl unzip
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o /tmp/awscliv2.zip
+          unzip -q /tmp/awscliv2.zip -d /tmp
+          /tmp/aws/install
+          rm -rf /tmp/aws /tmp/awscliv2.zip /var/lib/apt/lists/*
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.IAM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Load Skills Portal API credentials
+        env:
+          TARGET_ENV: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+          env_upper="$(echo "$TARGET_ENV" | tr '[:lower:]' '[:upper:]')"
+          case "$env_upper" in
+            INT|UAT|PROD) ;;
+            *) echo "Unsupported environment: $TARGET_ENV"; exit 1 ;;
+          esac
+
+          aws secretsmanager get-secret-value \
+            --secret-id "$CENTRAL_SECRET_ID" \
+            --query SecretString --output text > /tmp/secret.json
+
+          api_host="$(jq -r --arg k "SKILLS_API_HOST_${env_upper}" '.[$k] // empty' /tmp/secret.json)"
+          api_key="$( jq -r --arg k "SKILLS_API_KEY_${env_upper}"  '.[$k] // empty' /tmp/secret.json)"
+          if [ -z "$api_host" ] || [ -z "$api_key" ]; then
+            echo "Missing SKILLS_API_HOST_${env_upper} or SKILLS_API_KEY_${env_upper} in $CENTRAL_SECRET_ID"
+            rm -f /tmp/secret.json
+            exit 1
+          fi
+
+          echo "::add-mask::$api_key"
+          echo "SKILLS_API_URL=https://$api_host" >> "$GITHUB_ENV"
+          echo "SKILLS_API_KEY=$api_key" >> "$GITHUB_ENV"
+          echo "TARGET_ENV_UPPER=$env_upper" >> "$GITHUB_ENV"
+          rm -f /tmp/secret.json
+          echo "Resolved target: $env_upper -> https://$api_host (key length ${#api_key})"
+
+      - name: Install publication dependencies
+        run: python3 -m pip install --disable-pip-version-check requests
+
+      - name: Publish lifecycle artifacts and profile
+        run: |
+          set -eu
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python3 scripts/feature_lifecycle/publish_wise_feature_lifecycle_profile.py \
+              --api-url "$SKILLS_API_URL" \
+              --api-key "$SKILLS_API_KEY" \
+              --version "${{ inputs.version }}" \
+              --dry-run
+          else
+            python3 scripts/feature_lifecycle/publish_wise_feature_lifecycle_profile.py \
+              --api-url "$SKILLS_API_URL" \
+              --api-key "$SKILLS_API_KEY" \
+              --version "${{ inputs.version }}"
+          fi

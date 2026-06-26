@@ -1,0 +1,45 @@
+# Dependabot configuration — GitHub-native Software Composition Analysis (SCA).
+# Raises security alerts and opens patch PRs over time. This is the canonical
+# config for the feature lifecycle; app repos tailor the directories to their stack.
+# Reference: https://docs.github.com/code-security/dependabot
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - security
+      - dependencies
+
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - security
+      - dependencies
+
+  - package-ecosystem: pip
+    directory: "/api"
+    schedule:
+      interval: weekly
+    labels:
+      - security
+      - dependencies
+
+  - package-ecosystem: npm
+    directory: "/wise-skills-react"
+    schedule:
+      interval: weekly
+    labels:
+      - security
+      - dependencies
+
+  - package-ecosystem: npm
+    directory: "/cli"
+    schedule:
+      interval: weekly
+    labels:
+      - security
+      - dependencies

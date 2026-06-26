@@ -1,0 +1,52 @@
+---
+description: GxP execution discipline for installs, deployments, and run procedures. A complete, documented and automated dry-run is mandatory before any GxP run. Dry-runs are preparatory, repeatable, and never generate deviations as long as every artifact is clearly labelled dry-run. Pre-requisites and run/install are GxP-controlled phases where any anomaly generates a deviation. Apply when touching install/run/deploy scripts, GxP runbooks, or release/publish workflows.
+globs:
+  - "**/install*.sh"
+  - "**/run*.sh"
+  - "**/deploy*.sh"
+  - ".github/workflows/**/*.y*ml"
+  - "scripts/**/*.py"
+  - "docs/**/runbook*.md"
+alwaysApply: false
+---
+
+# GxP Execution
+
+Execution is split into clearly separated phases. Only the controlled phases are GxP.
+
+## Phases
+
+| Phase | GxP? | Repeatable | Generates deviation? |
+|---|---|---|---|
+| Dry-run | No (preparatory) | Yes, unlimited | **Never** |
+| Pre-requisites | **Yes** | No (controlled) | **Yes** |
+| Run / Install | **Yes** | No (controlled) | **Yes** |
+
+## Dry-run (preparatory)
+
+- A **complete dry-run is mandatory before any GxP run** (pre-requisites or run/install).
+- The dry-run MUST be **documented** (expected actions, inputs, environment) and **automated** (a `--dry-run` flag or `dry_run: true` workflow input — not a manual ad-hoc procedure).
+- Every dry-run artifact — logs, console output, reports, tickets — MUST be **clearly labelled as dry-run** (e.g. each action prefixed `[dry-run] would ...`, report header `MODE: DRY-RUN`).
+- A dry-run produces **no GxP record and no deviation**, regardless of how many times it is run.
+- A dry-run MUST NOT mutate any controlled system, dataset, or environment.
+
+## Pre-requisites (GxP)
+
+- Treated as a **controlled GxP step**: capture who/what/when, versions, and checks performed.
+- Any unmet pre-requisite or unexpected result is an **anomaly → open a deviation** with traceability (cause, impact, resolution, approval).
+
+## Run / Install (GxP)
+
+- Treated as a **controlled GxP step**, executed only after a successful, labelled dry-run.
+- Any failure, partial result, or out-of-spec behaviour is an **anomaly → open a deviation**; do not silently retry.
+- Record the executed version, environment, operator, and evidence (logs, hashes).
+
+## Deviations
+
+- Deviations are raised **only** by GxP phases (pre-requisites, run/install) — **never** by dry-runs.
+- Each deviation MUST be traceable: description, root cause, impact, corrective action, and the Git commit or ticket reference.
+
+## Evidence and traceability
+
+- Keep Git as the source of truth for dry-run documentation, GxP run evidence, and deviations.
+- Use the `gxp-unit-test-report-generator` skill for audit-ready report format (CFR 21 Part 11 traceability).

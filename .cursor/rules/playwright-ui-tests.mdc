@@ -1,0 +1,114 @@
+---
+description: Enforce Playwright E2E coverage for every new or interactive React page/component in the User UI and Admin UI. Apply when adding/modifying files under wise-skills-react/src/pages/** or src/components/** that include user interactions (clicks, forms, navigation), and when reviewing Playwright specs.
+globs:
+  - wise-skills-react/src/pages/**/*.tsx
+  - wise-skills-react/src/components/**/*.tsx
+  - wise-skills-react/tests/e2e/**/*.spec.ts
+alwaysApply: false
+---
+
+# Playwright coverage for User UI and Admin UI
+
+The Skills Portal ships two React surfaces from the same codebase:
+
+- **User UI** (`wise-skills-react/src/pages/!(admin)/**`) → tested under `wise-skills-react/tests/e2e/{public,user}/*.spec.ts`.
+- **Admin UI** (`wise-skills-react/src/pages/admin/**`) → tested under `wise-skills-react/tests/e2e/admin/*.spec.ts`.
+
+Both surfaces are user-facing (one for end users, one for admins). **Any new page, modal, form, list-action, or destructive button must ship with a Playwright spec** that exercises it on a realistic backend, in the same PR.
+
+## When this rule fires you MUST
+
+1. **Identify the surface**: is the file under `pages/admin/**` (Admin UI) or elsewhere (User UI)? That determines the spec folder.
+2. **Find or create the spec** for the touched feature:
+   - User UI: `wise-skills-react/tests/e2e/user/<feature>.spec.ts` (or `public/` for unauthenticated flows).
+   - Admin UI: `wise-skills-react/tests/e2e/admin/<feature>.spec.ts`.
+3. **Cover the happy path** for every new interaction:
+   - Page renders (h1 / h2 visible, no spinner stuck).
+   - Each new clickable control performs its intended action and the UI reflects the result.
+   - Forms validate required fields and submit successfully.
+4. **Cover one error or guarded path** per destructive or risky action:
+   - Confirm modal cancel keeps state intact.
+   - Permission denied for non-admin (User UI cannot reach Admin routes).
+   - 4xx API response shows an inline error toast or banner.
+5. **Update `tests/e2e/README.md`** if you add a new feature folder or auth fixture.
+
+## Selector hygiene (mandatory)
+
+- **Prefer `data-testid`** for stable selection of interactive controls. Use a kebab-case slug describing the action, not the visual label: `data-testid="artifact-delete-btn"`, `data-testid="profile-form-submit"`.
+- **Use `getByRole('button', { name: ... })`** only when the visible label is stable across i18n and never changes. Anything dynamic (i18n, future renames) → `data-testid`.
+- **Never** select with raw CSS classes (`.btn-danger`) or with `:nth-child` — they break on reorder.
+- When a click times out, **always check first** whether a modal / overlay is intercepting pointer events. Close any open modal explicitly via its dialog Cancel button (`data-testid="modal-cancel-btn"`), do not just press Escape.
+
+## Modal & confirm dialog handling
+
+This codebase uses `AdminConfirmModal` for destructive actions. The pattern that prevents flakiness:
+
+```ts
+// 1) trigger the action
+await page.getByTestId('artifact-delete-btn').first().click();
+
+// 2) wait for the modal to be in the DOM AND visible
+const modal = page.getByRole('dialog');
+await expect(modal).toBeVisible();
+
+// 3) optionally fill the confirm phrase if required
+await modal.getByLabel(/confirm/i).fill('DELETE');
+
+// 4) click the inner confirm button (NOT the row button beneath the overlay)
+await modal.getByTestId('modal-confirm-btn').click();
+
+// 5) assert the row is gone
+await expect(page.getByTestId('artifact-row')).toHaveCount(0);
+```
+
+Splitting unrelated assertions (e.g. promote then delete) into **two separate `test()` blocks** is mandatory: one shared modal between them is the #1 cause of timeout-by-overlay errors.
+
+## Authenticated flows
+
+- User-only flows: load the storage state from `tests/auth/user.setup.ts`.
+- Admin flows: load `tests/auth/admin.setup.ts`. Never re-implement the OIDC handshake inline.
+- For unauthenticated flows: explicitly clear storage state, do not assume.
+
+## Accessibility regression
+
+When you add a page or a form-heavy component, **also add** an `axe-core` assertion at the end of the happy-path test:
+
+```ts
+import AxeBuilder from '@axe-core/playwright';
+
+test('settings page has no critical a11y violations', async ({ page }) => {
+  await page.goto('/admin/settings');
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+  const critical = results.violations.filter((v) => v.impact === 'critical');
+  expect(critical, JSON.stringify(critical, null, 2)).toEqual([]);
+});
+```
+
+This caught the recent `aria-labelledby` issue on `/admin/settings`.
+
+## Local run
+
+```bash
+cd wise-skills-react
+npm run e2e            # full suite
+npm run e2e -- admin   # admin only (filter by folder)
+npm run e2e -- --headed --project=chromium  # interactive debug
+```
+
+CI runs the full matrix on every PR via `.github/workflows/e2e.yaml`.
+
+## Anti-patterns
+
+- ❌ Adding a page under `src/pages/` without a `tests/e2e/<surface>/<feature>.spec.ts`.
+- ❌ Selectors based on i18n labels for fragile actions (rename in any language → CI red).
+- ❌ Sharing a modal across multiple `test()` blocks: each test must open and close its own modal.
+- ❌ Clicking through an overlay: if a click times out, the test must first close any visible dialog explicitly.
+- ❌ Ignoring axe-core failures with `// eslint-disable` or `expect(...).toBeDefined()` instead of asserting an empty list.
+
+## Cross-references
+
+- E2E configuration: `wise-skills-react/playwright.config.ts`
+- Auth fixtures: `wise-skills-react/tests/auth/{user,admin}.setup.ts`
+- Existing examples to mirror: `tests/e2e/admin/artifacts.spec.ts` (split scenarios), `tests/e2e/user/skill-detail.spec.ts` (form + axe), `tests/e2e/public/auth.spec.ts` (unauthenticated path).

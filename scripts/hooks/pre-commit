@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Versioned pre-commit hook.
+#
+# Activate it locally with:
+#   git config core.hooksPath scripts/hooks
+#
+# This hook:
+#   1. Syncs the Cursor agent transcripts into <repo>/transcripts/ via
+#      scripts/sync_transcripts.sh (best-effort secret scrub included).
+#   2. Stages any new or updated transcripts so they ship with the commit.
+#
+# The sync is skipped if scripts/sync_transcripts.sh is missing (so the hook
+# stays portable across clones that do not have the script yet).
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SYNC_SCRIPT="${REPO_ROOT}/scripts/sync_transcripts.sh"
+FEATURE_VALIDATOR="${REPO_ROOT}/scripts/feature_lifecycle/validate_feature_manifests.py"
+STAGED_FILES="$(git diff --cached --name-only --diff-filter=ACMR || true)"
+
+if [ -x "${SYNC_SCRIPT}" ]; then
+  "${SYNC_SCRIPT}" || {
+    echo "[pre-commit] transcript sync failed — aborting commit." >&2
+    exit 1
+  }
+  if [ -d "${REPO_ROOT}/transcripts" ]; then
+    git add "${REPO_ROOT}/transcripts" >/dev/null 2>&1 || true
+  fi
+fi
+
+feature_manifests=()
+frontend_audit_needed=0
+python_audit_needed=0
+
+while IFS= read -r file; do
+  [ -n "$file" ] || continue
+  case "$file" in
+    features/*.json)
+      feature_manifests+=("${REPO_ROOT}/${file}")
+      ;;
+    wise-skills-react/package.json|wise-skills-react/package-lock.json|cli/package.json|cli/package-lock.json)
+      frontend_audit_needed=1
+      ;;
+    requirements.txt|api/requirements-api.txt)
+      python_audit_needed=1
+      ;;
+  esac
+done <<EOF
+${STAGED_FILES}
+EOF
+
+if [ "${#feature_manifests[@]}" -gt 0 ] && [ -f "${FEATURE_VALIDATOR}" ]; then
+  if ! python3 "${FEATURE_VALIDATOR}" "${feature_manifests[@]}"; then
+    echo "[pre-commit] warning: feature manifest validation failed. CI will report the exact schema errors." >&2
+  fi
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  if gitleaks protect --staged --redact >/dev/null 2>&1; then
+    :
+  else
+    echo "[pre-commit] warning: gitleaks reported a potential secret. CI security-gate will block if this is real." >&2
+  fi
+else
+  echo "[pre-commit] warning: gitleaks not found locally, skipping staged secret scan." >&2
+fi
+
+if [ "${frontend_audit_needed}" -eq 1 ] && command -v npm >/dev/null 2>&1; then
+  if [ -f "${REPO_ROOT}/wise-skills-react/package-lock.json" ]; then
+    (
+      cd "${REPO_ROOT}/wise-skills-react" &&
+      npm audit --audit-level=critical --package-lock-only >/dev/null 2>&1
+    ) || echo "[pre-commit] warning: frontend dependency audit raised a critical finding. CI security-gate will decide." >&2
+  fi
+fi
+
+if [ "${python_audit_needed}" -eq 1 ]; then
+  if python3 -m pip_audit -h >/dev/null 2>&1; then
+    python3 -m pip_audit -r "${REPO_ROOT}/requirements.txt" >/dev/null 2>&1 || \
+      echo "[pre-commit] warning: root Python dependency audit reported findings. CI security-gate will decide." >&2
+    if [ -f "${REPO_ROOT}/api/requirements-api.txt" ]; then
+      python3 -m pip_audit -r "${REPO_ROOT}/api/requirements-api.txt" >/dev/null 2>&1 || \
+        echo "[pre-commit] warning: API Python dependency audit reported findings. CI security-gate will decide." >&2
+    fi
+  else
+    echo "[pre-commit] warning: pip-audit not installed locally, skipping Python dependency audit." >&2
+  fi
+fi
+
+exit 0

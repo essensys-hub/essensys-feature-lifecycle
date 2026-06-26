@@ -1,0 +1,13 @@
+{
+  "name": "angular-architect",
+  "tool": "cursor",
+  "version": "1.0.0",
+  "artifact_type": "skill",
+  "cli_version": "dev",
+  "api_url": "https://skills-api.<your-skills-host>",
+  "skill_id": 36,
+  "installed_at": "2026-03-14T14:42:11Z",
+  "client_uid": "502",
+  "client_user": "I0438973",
+  "client_ip": "192.168.0.30"
+}

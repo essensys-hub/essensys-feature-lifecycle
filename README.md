@@ -28,7 +28,7 @@ Idée → Jira (SCRUM) → OpenSpec → Issues & Tasks Jira → Code → Test×N
 | 3 | Découpage | Epics / stories / tasks dans Jira (`jira-xray-test-campaign`) |
 | 4 | Code | Implémentation selon les specs, toolchain open source |
 | 5 | Tests | Unit / intégration / E2E (Playwright pour les UIs) |
-| 6 | Sécurité | `security-gate-triage` + Dependabot + `security-gate.yml` (bloquant) |
+| 6 | Sécurité | open source : gitleaks (secrets) + Trivy (CVE/IaC) + Dependabot, via `security-gate.yml` (bloquant) |
 | 7 | Doc | Mise à jour **continue** (doc centralisée, install, user guides) |
 | 8 | Deploy | Local (gateway / dev) **et** OVH (cloud) |
 | 9 | Revue | Autocritique à chaque étape + Bugbot / security-review |
@@ -153,12 +153,13 @@ La publication du **profil de skills** (ce dépôt) reste assurée par `publish-
 
 ## Secrets (SOPS + age)
 
-Aucun secret en clair. Les secrets — dont le **token API Jira** `JIRA_SECRET` — sont chiffrés avec SOPS + age dans `essensys-ansible/secrets/cloud/essensys.sops.yaml`.
+Aucun secret en clair. Les secrets — dont le **token API Jira** `JIRA_SECRET` et le **token GitGuardian** `gitguardian_token` (ggshield, optionnel) — sont chiffrés avec SOPS + age dans `essensys-ansible/secrets/cloud/essensys.sops.yaml`.
 
 ```bash
 cd ../essensys-ansible
 export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 export JIRA_SECRET="$(sops -d --extract '["JIRA_SECRET"]' secrets/cloud/essensys.sops.yaml)"
+export GITGUARDIAN_API_KEY="$(sops -d --extract '["gitguardian_token"]' secrets/cloud/essensys.sops.yaml)"
 ```
 
 Détails et règles : `AGENTS.md` → section **Secrets & SOPS** ; doc canonique `essensys-ansible/docs/secrets.md`.

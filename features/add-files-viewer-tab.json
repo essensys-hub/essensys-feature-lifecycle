@@ -1,0 +1,114 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "add-files-viewer-tab",
+  "title": "Files Viewer tab on the skill detail page",
+  "status": "in-progress",
+  "owner": "I0438973",
+  "jira": {
+    "issue": "TBD",
+    "test_plan": null
+  },
+  "git": {
+    "branch": "feat/add-files-viewer-tab",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "add-files-viewer-tab",
+    "path": "openspec/changes/add-files-viewer-tab",
+    "proposal": "openspec/changes/add-files-viewer-tab/proposal.md",
+    "design": "openspec/changes/add-files-viewer-tab/design.md",
+    "tasks": "openspec/changes/add-files-viewer-tab/tasks.md",
+    "specs": [
+      "openspec/changes/add-files-viewer-tab/specs/skill-file-tree-readonly/spec.md",
+      "openspec/changes/add-files-viewer-tab/specs/skill-files-viewer-ui/spec.md"
+    ]
+  },
+  "implementation": {
+    "paths": [
+      "wise-skills-react/src/pages/skills/SkillDetailPage.tsx",
+      "wise-skills-react/src/pages/skills/SkillFilesTab.tsx",
+      "wise-skills-react/src/pages/skills/__tests__/SkillDetailPage.tabs.test.tsx",
+      "wise-skills-react/src/pages/skills/__tests__/SkillFilesTab.test.tsx",
+      "wise-skills-react/src/i18n/de.json",
+      "wise-skills-react/src/i18n/en.json",
+      "wise-skills-react/src/i18n/es.json",
+      "wise-skills-react/src/i18n/fr.json",
+      "wise-skills-react/src/i18n/ja.json",
+      "wise-skills-react/src/i18n/zh.json"
+    ],
+    "primary_surface": "react-user"
+  },
+  "userguide": {
+    "pages": [
+      "docs/features/files-viewer.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [
+      "skillDetail.tab.files",
+      "skillFiles.action.copyPath",
+      "skillFiles.action.download",
+      "skillFiles.action.downloadZip",
+      "skillFiles.empty",
+      "skillFiles.error",
+      "skillFiles.loading",
+      "skillFiles.version.hash",
+      "skillFiles.version.label"
+    ],
+    "screenshots": [
+      "docs/features/assets/files-tab-markdown.png"
+    ]
+  },
+  "tests": {
+    "playwright": [
+      "wise-skills-react/tests/e2e/user/files-viewer.spec.ts"
+    ],
+    "pytest": [],
+    "testthat": [],
+    "coverage_must_test": [
+      "Files tab is present in the tab navigation",
+      "clicking Files tab reveals version selector, hash and tree explorer",
+      "Markdown file renders with syntax highlight",
+      "binary preview remains read-only and downloadable"
+    ],
+    "smoke_tags": [
+      "@smoke"
+    ]
+  },
+  "confluence": {
+    "space": "WISE",
+    "parent_page": "66624620340",
+    "template": "feature-user-guide",
+    "draft_page_id": "67077341665",
+    "published_page_id": null
+  },
+  "release": {
+    "changelog_entry": "Added a read-only Files tab on skill detail pages for all visible versions.",
+    "target_tag": null,
+    "surfaces": [
+      "react-user"
+    ],
+    "paths": [
+      "changelogs/react-user/en.md",
+      "changelogs/react-user/fr.md"
+    ]
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": null,
+    "owner_security": "I0438973"
+  }
+}
