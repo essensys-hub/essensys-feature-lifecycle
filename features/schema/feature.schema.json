@@ -222,6 +222,134 @@
             "pattern": "^@?[A-Za-z0-9._-]+$"
           },
           "uniqueItems": true
+        },
+        "ux_matrix": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required",
+            "devices",
+            "required_projects",
+            "screenshots_required",
+            "visual_regression_required",
+            "no_armoire_required"
+          ],
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "devices": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "desktop",
+                  "iphone",
+                  "ipad",
+                  "android",
+                  "ecran-domo",
+                  "ecran-domo-compact",
+                  "ecran-domo-portrait"
+                ]
+              },
+              "uniqueItems": true,
+              "minItems": 1
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "local",
+                  "remote",
+                  "support",
+                  "demo",
+                  "cm5",
+                  "rpi"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "required_projects": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9._-]+-[A-Za-z0-9._-]+$"
+              },
+              "uniqueItems": true,
+              "minItems": 1
+            },
+            "screenshots_required": {
+              "type": "boolean"
+            },
+            "visual_regression_required": {
+              "type": "boolean"
+            },
+            "no_armoire_required": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "ux_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "devices_validated",
+            "status"
+          ],
+          "properties": {
+            "playwright_report": {
+              "$ref": "#/$defs/nullablePathString"
+            },
+            "screenshots": {
+              "$ref": "#/$defs/pathArray"
+            },
+            "last_run_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "devices_validated": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "desktop",
+                  "iphone",
+                  "ipad",
+                  "android",
+                  "ecran-domo",
+                  "ecran-domo-compact",
+                  "ecran-domo-portrait"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "passed",
+                "failed",
+                "not-run",
+                "blocked"
+              ]
+            },
+            "reviewer": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 64
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
         }
       },
       "allOf": [

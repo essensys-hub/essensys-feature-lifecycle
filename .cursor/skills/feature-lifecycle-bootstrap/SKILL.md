@@ -46,11 +46,13 @@ Key templates include:
 
 - `features/schema/feature.schema.json`
 - `.github/workflows/feature-gate.yml.tpl`
+- `.github/workflows/ux-matrix-gate.yml.tpl` — desktop/iPhone/iPad Playwright non-regression gate for UI repos
 - `.github/workflows/security-gate.yml.tpl`
 - `.github/workflows/dependabot.yml.tpl`
 - `scripts/hooks/pre-commit.tpl`
 - `.cursor/rules/feature-gate.mdc.tpl`
 - `.cursor/rules/security-gate.mdc.tpl`
+- `.cursor/rules/essensys-ux-matrix-gate.mdc.tpl`
 - `AGENTS.md.tpl`
 
 The security stack is GitHub-native SCA (Dependabot): `security-gate.yml.tpl` +

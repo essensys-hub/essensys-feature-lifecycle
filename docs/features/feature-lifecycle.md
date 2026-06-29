@@ -23,7 +23,7 @@ features/<id>.json
 | 2 | **OpenSpec** | On génère un change (`openspec-propose`) : proposal, design, specs, tasks. |
 | 3 | **Issues & Tasks** | On crée les epics/stories/tasks dans Jira, reliées au change ; les commits/PR GitHub portent la clé `SCRUM-123`. |
 | 4 | **Code** | Implémentation selon les specs, toolchain open source uniquement. |
-| 5 | **Tests** | Unit, intégration, E2E (Playwright). Rien ne part sans tests verts. |
+| 5 | **Tests** | Unit, intégration, E2E (Playwright). Pour les UIs : gate UX desktop + iPhone + iPad obligatoire, avec no-armoire. Rien ne part sans tests verts. |
 | 6 | **Gate sécurité** | gitleaks + **Trivy** (CVE/IaC) + Dependabot via `security-gate.yml`. Bloquant. Open source. |
 | 7 | **Documentation** | Mise à jour **tout au long**, jamais à la fin. |
 | 8 | **Deploy** | Local (gateway / dev) **et** OVH (cloud). |
@@ -37,16 +37,40 @@ features/<id>.json
 | `feature-manifest-orchestrator` | crée ou met à jour le manifest depuis le Project / OpenSpec |
 | `feature-userguide-sync` | met à jour la doc utilisateur |
 | `playwright-from-spec` | relie OpenSpec aux tests E2E |
+| `essensys-ux-regression-gate` | impose la non-régression UX desktop/iPhone/iPad et la preuve Playwright |
 | `security-gate-triage` | traite les findings secrets/CVE/Dependabot |
 | `jira-xray-test-campaign` | crée epics/stories/tasks Jira et campagnes de test Xray |
 | `feature-gate.yml` | vérifie schéma, chemins, couverture, fraîcheur |
+| `ux-matrix-gate.yml` | exécute la matrice Playwright desktop/iPhone/iPad dans les repos frontends |
 | `security-gate.yml` | bloque sur secrets et findings Critical/High |
+
+## Gate UX multi-device
+
+Toute feature UI doit déclarer dans `features/<id>.json` :
+
+- `tests.ux_matrix.required: true`
+- `tests.ux_matrix.devices` contenant au minimum `desktop`, `iphone`, `ipad`
+- `tests.ux_matrix.required_projects` couvrant ces formats, par exemple `support-desktop`, `support-iphone`, `support-ipad`
+- `tests.ux_matrix.screenshots_required: true`
+- `tests.ux_matrix.visual_regression_required: true`
+- `tests.ux_matrix.no_armoire_required: true` dès qu'une UI peut déclencher une action domotique
+
+Les specs Playwright doivent porter une annotation lisible par revue et gate :
+
+```ts
+// @feature: <id>
+// @devices: desktop,iphone,ipad
+// @no-armoire
+```
+
+`scripts/feature_lifecycle/check_feature_gate.py --strict` bloque une feature UI si la matrice ou les preuves minimales sont absentes.
 
 ## Fichiers clefs
 
 - `features/schema/feature.schema.json`
 - `features/*.json`
 - `.github/workflows/feature-gate.yml`
+- `.github/workflows/ux-matrix-gate.yml`
 - `.github/workflows/security-gate.yml`
 - `.github/dependabot.yml`
 - `scripts/hooks/pre-commit`

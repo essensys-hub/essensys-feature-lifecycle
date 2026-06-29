@@ -29,8 +29,10 @@ Playwright from spec:
 - Follow `.cursor/rules/playwright-ui-tests.mdc`.
 - Prefer `data-testid` first.
 - Use `getByRole()` only when the visible label is stable across i18n.
-- Add `@feature: <id>` and `@spec: <openspec path>` comments near the suite header.
+- Add `@feature: <id>`, `@spec: <openspec path>`, and `@devices: desktop,iphone,ipad` comments near the suite header for UI features.
 - Keep smoke-safe read-only tests tagged with `@smoke` when appropriate.
+- For ESSENSYS domotic UI tests, enforce a `no-armoire` guard before exercising buttons or controls that could send values to firmware, gateway, cloud relay, scenarios, shutters, lights or `/inject` endpoints. Use `@no-armoire` in the spec header.
+- For UI features, update `features/<id>.json` with `tests.ux_matrix` covering desktop, iphone, ipad and evidence placeholders under `tests.ux_evidence`.
 
 ## Explicit anti-patterns
 

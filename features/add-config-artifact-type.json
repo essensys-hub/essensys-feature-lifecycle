@@ -52,7 +52,10 @@
     "screenshots": []
   },
   "tests": {
-    "playwright": [],
+    "playwright": [
+      "wise-skills-react/tests/e2e/admin/config-artifacts.spec.ts",
+      "wise-skills-react/tests/e2e/user/config-artifacts.spec.ts"
+    ],
     "pytest": [
       "tests/test_config_api.py",
       "tests/test_config_validator.py",
@@ -64,7 +67,36 @@
       "config artifacts are downloadable and installable through the ZIP flow",
       "config artifacts are accepted by the public API and reflected in version payloads"
     ],
-    "smoke_tags": []
+    "smoke_tags": [],
+    "ux_matrix": {
+      "required": true,
+      "devices": [
+        "desktop",
+        "iphone",
+        "ipad"
+      ],
+      "targets": [
+        "support"
+      ],
+      "required_projects": [
+        "support-desktop",
+        "support-iphone",
+        "support-ipad"
+      ],
+      "screenshots_required": true,
+      "visual_regression_required": true,
+      "no_armoire_required": false,
+      "notes": "Mandatory UX regression matrix: desktop + iPhone + iPad. Downstream app repos execute the Playwright projects."
+    },
+    "ux_evidence": {
+      "playwright_report": null,
+      "screenshots": [],
+      "last_run_at": null,
+      "devices_validated": [],
+      "status": "not-run",
+      "reviewer": null,
+      "notes": "Evidence is produced in downstream frontend repositories."
+    }
   },
   "confluence": {
     "space": "WISE",

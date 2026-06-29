@@ -27,7 +27,7 @@ Idée → Jira (SCRUM) → OpenSpec → Issues & Tasks Jira → Code → Test×N
 | 2 | Spec | Change OpenSpec (`openspec-propose`) : proposal, design, specs, tasks |
 | 3 | Découpage | Epics / stories / tasks dans Jira (`jira-xray-test-campaign`) |
 | 4 | Code | Implémentation selon les specs, toolchain open source |
-| 5 | Tests | Unit / intégration / E2E (Playwright pour les UIs) |
+| 5 | Tests | Unit / intégration / E2E + gate UX desktop/iPhone/iPad obligatoire pour les UIs (Playwright + no-armoire) |
 | 6 | Sécurité | open source : gitleaks (secrets) + Trivy (CVE/IaC) + Dependabot, via `security-gate.yml` (bloquant) |
 | 7 | Doc | Mise à jour **continue** (doc centralisée, install, user guides) |
 | 8 | Deploy | Local (gateway / dev) **et** OVH (cloud) |
@@ -46,9 +46,9 @@ Orchestration IA / subagents : [`docs/feature-lifecycle/ai-orchestration.md`](do
 
 ---
 
-## Contenu du profil (21 artefacts)
+## Contenu du profil (24 artefacts)
 
-### Skills (14) — `.cursor/skills/<name>/SKILL.md`
+### Skills (15) — `.cursor/skills/<name>/SKILL.md`
 
 | # | Skill | Rôle |
 |---|---|---|
@@ -66,8 +66,9 @@ Orchestration IA / subagents : [`docs/feature-lifecycle/ai-orchestration.md`](do
 | 12 | `angular-architect`             | Patterns front entreprise |
 | 13 | `gxp-unit-test-report-generator`| Rapports de tests unitaires auditables |
 | 14 | `dry-run-install-procedure`     | Procédures d'installation dry-run documentées |
+| 15 | `essensys-ux-regression-gate`  | Gate UX desktop/iPhone/iPad + no-armoire pour frontends |
 
-### Rules (7) — `.cursor/rules/<name>.mdc`
+### Rules (8) — `.cursor/rules/<name>.mdc`
 
 | # | Rule | Portée |
 |---|---|---|
@@ -78,6 +79,7 @@ Orchestration IA / subagents : [`docs/feature-lifecycle/ai-orchestration.md`](do
 | 5 | `security-gate`                 | Politique secrets / CVE / Dockerfile / workflows |
 | 6 | `gxp-exec`                      | Exécution rigoureuse : dry-run, prérequis, écarts |
 | 7 | `dry-run-install-doc`           | Sync des docs d'installation dry-run |
+| 8 | `essensys-ux-matrix-gate`      | Non-régression UX desktop/iPhone/iPad obligatoire |
 
 ---
 
@@ -90,11 +92,12 @@ essensys-feature-lifecycle/
 ├── .env                                       ← valeurs réelles, gitignored
 │
 ├── .cursor/
-│   ├── skills/<14 dossiers>/SKILL.md          ← skills du profil
-│   └── rules/<7 fichiers>.mdc                 ← rules du profil
+│   ├── skills/<15 dossiers>/SKILL.md          ← skills du profil
+│   └── rules/<8 fichiers>.mdc                 ← rules du profil
 │
 ├── .github/workflows/
 │   ├── feature-gate.yml                       ← schéma, chemins, couverture, fraîcheur
+│   ├── ux-matrix-gate.yml                     ← template/gate UX desktop+iPhone+iPad pour frontends
 │   ├── security-gate.yml                      ← gitleaks, audit deps, lint sécurité
 │   └── publish-wise-feature-lifecycle.yml     ← publication du profil (Skills Portal)
 │

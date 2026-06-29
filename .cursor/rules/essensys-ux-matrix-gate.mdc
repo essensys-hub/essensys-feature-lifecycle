@@ -1,0 +1,93 @@
+---
+description: Enforce ESSENSYS UX non-regression on desktop, iPhone and iPad for every UI-facing feature. Apply when editing frontend pages/components, Playwright specs, feature manifests, or UX evidence.
+globs:
+  - "src/pages/**/*.tsx"
+  - "src/components/**/*.tsx"
+  - "**/*.css"
+  - "**/*.scss"
+  - "e2e/**/*.ts"
+  - "tests/e2e/**/*.ts"
+  - "features/*.json"
+alwaysApply: false
+---
+
+# ESSENSYS UX Matrix Gate
+
+Any UI-facing ESSENSYS feature must prove non-regression on at least:
+
+- desktop / ordinateur
+- iPhone
+- iPad
+
+This is a merge gate, not a best-effort note.
+
+## Required manifest contract
+
+For UI features, `features/<id>.json` must include:
+
+```json
+"tests": {
+  "playwright": ["e2e/tests/<feature>.spec.ts"],
+  "coverage_must_test": ["..."],
+  "ux_matrix": {
+    "required": true,
+    "devices": ["desktop", "iphone", "ipad"],
+    "required_projects": ["support-desktop", "support-iphone", "support-ipad"],
+    "screenshots_required": true,
+    "visual_regression_required": true,
+    "no_armoire_required": true
+  },
+  "ux_evidence": {
+    "devices_validated": ["desktop", "iphone", "ipad"],
+    "status": "passed"
+  }
+}
+```
+
+Use `no_armoire_required=true` for domotic UIs that could send actions to firmware, gateway, cloud relay, scenarios, shutters, lights or `/inject` endpoints.
+
+## Required Playwright annotations
+
+Every UX matrix spec should include visible annotations near the suite header:
+
+```ts
+// @feature: <feature-id>
+// @spec: openspec/changes/<change>/specs/<capability>/spec.md
+// @devices: desktop,iphone,ipad
+// @no-armoire
+```
+
+Project names must also make device coverage obvious, e.g. `support-desktop`, `support-iphone`, `support-ipad`.
+
+## Required checks
+
+Run before done:
+
+```bash
+python3 scripts/feature_lifecycle/validate_feature_manifests.py
+python3 scripts/feature_lifecycle/check_feature_gate.py --strict
+```
+
+In frontend repos, also run the UX matrix command exposed by the repo, for example:
+
+```bash
+npm run test:matrix -- --project=support-desktop --project=support-iphone --project=support-ipad
+```
+
+## No-armoire safety
+
+Tests must block real mutations unless dry-run is explicit. Block or mock:
+
+- `/api/admin/inject`
+- `/api/portal/inject`
+- `/api/web/actions`
+- `/scenarios/*/launch`
+- any POST/PUT/PATCH/DELETE that could reach a real armoire
+
+## Done criteria
+
+- Feature manifest has `tests.ux_matrix`.
+- Desktop, iPhone and iPad are declared and evidenced.
+- Playwright report/screenshots are uploaded or linked when available.
+- `check_feature_gate.py --strict` passes.
+- No real armoire action can be emitted during tests.

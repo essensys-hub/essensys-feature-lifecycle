@@ -72,7 +72,36 @@
     ],
     "smoke_tags": [
       "@smoke"
-    ]
+    ],
+    "ux_matrix": {
+      "required": true,
+      "devices": [
+        "desktop",
+        "iphone",
+        "ipad"
+      ],
+      "targets": [
+        "support"
+      ],
+      "required_projects": [
+        "support-desktop",
+        "support-iphone",
+        "support-ipad"
+      ],
+      "screenshots_required": true,
+      "visual_regression_required": true,
+      "no_armoire_required": false,
+      "notes": "Mandatory UX regression matrix: desktop + iPhone + iPad. Downstream app repos execute the Playwright projects."
+    },
+    "ux_evidence": {
+      "playwright_report": null,
+      "screenshots": [],
+      "last_run_at": null,
+      "devices_validated": [],
+      "status": "not-run",
+      "reviewer": null,
+      "notes": "Evidence is produced in downstream frontend repositories."
+    }
   },
   "confluence": {
     "space": "WISE",
