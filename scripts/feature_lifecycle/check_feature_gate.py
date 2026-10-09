@@ -25,8 +25,10 @@ TESTTHAT_TITLE_PATTERN = re.compile(
     re.MULTILINE,
 )
 JUNIT_TITLE_PATTERN = re.compile(
-    r"@Test\b[\s\S]{0,300}?\b(?:fun|void)\s+`?(?P<title>[A-Za-z_][A-Za-z0-9_ ]*)`?\s*\(",
+    r"@Test\b[\s\S]{0,300}?\b(?:fun|func|void)\s+`?(?P<title>[A-Za-z_][A-Za-z0-9_ ]*)`?\s*\(",
 )
+# XCTest (Swift/Objective-C) : méthodes `func test…()` sans annotation.
+XCTEST_TITLE_PATTERN = re.compile(r"^\s*(?:@MainActor\s+)?func\s+test_?(?P<title>[A-Za-z0-9_]+)\s*\(", re.MULTILINE)
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 MANDATORY_UX_DEVICES = {"desktop", "iphone", "ipad"}
 UI_SURFACE_VALUES = {"react-user", "react-admin", "mixed"}
@@ -169,6 +171,9 @@ def load_test_titles(paths: Iterable[str]) -> list[str]:
         titles.extend(match.group("title") for match in TESTTHAT_TITLE_PATTERN.finditer(content))
         titles.extend(
             match.group("title").replace("_", " ") for match in JUNIT_TITLE_PATTERN.finditer(content)
+        )
+        titles.extend(
+            match.group("title").replace("_", " ") for match in XCTEST_TITLE_PATTERN.finditer(content)
         )
     return titles
 
