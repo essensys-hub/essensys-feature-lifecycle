@@ -42,6 +42,32 @@ class JUnitTitlesTest(unittest.TestCase):
         self.assertTrue(gate.title_matches("dry run header sent in test mode", titles))
 
 
+SWIFT = """
+struct AuthRepositoryTests {
+    @Test func unauthorized_response_clears_session_and_shows_login_NR_ios_2() async {}
+}
+final class AppFlowUITests: XCTestCase {
+    @MainActor func test_lan_host_in_cleartext_is_refused() {}
+    private func login(_ app: XCUIApplication) {}
+}
+"""
+
+
+class SwiftTitlesTest(unittest.TestCase):
+    """Swift Testing (`@Test func`) et XCTest (`func test_…`) comptent pour coverage_must_test (iOS)."""
+
+    def titles(self) -> list[str]:
+        out = [m.group("title").replace("_", " ") for m in gate.JUNIT_TITLE_PATTERN.finditer(SWIFT)]
+        out += [m.group("title").replace("_", " ") for m in gate.XCTEST_TITLE_PATTERN.finditer(SWIFT)]
+        return out
+
+    def test_swift_testing_and_xctest_titles(self) -> None:
+        titles = self.titles()
+        self.assertEqual(len(titles), 2)
+        self.assertTrue(gate.title_matches("unauthorized response clears session and shows login", titles))
+        self.assertTrue(gate.title_matches("lan host in cleartext is refused", titles))
+
+
 class NativeMobileSurfaceTest(unittest.TestCase):
     def test_android_surface_skips_web_ux_matrix(self) -> None:
         manifest = {"implementation": {"primary_surface": "android", "paths": ["app/src/main/PortalRepository.kt"]}}
