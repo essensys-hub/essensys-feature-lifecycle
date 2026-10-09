@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites name="pytest tests">
+  <testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="2.1" timestamp="2026-10-09T02:20:00" hostname="runner">
+    <testcase classname="test.test_chb3" name="test_scenario_playback" time="1.5">
+      <properties>
+        <property name="nr" value="NR-server-backend-20"/>
+        <property name="issue" value="#77"/>
+      </properties>
+    </testcase>
+    <testcase classname="test.test_chb3" name="test_scenario_restore" time="0.5">
+      <properties>
+        <property name="nr" value="NR-server-backend-21"/>
+      </properties>
+      <failure message="AssertionError: restore mismatch">AssertionError: restore mismatch</failure>
+    </testcase>
+    <testcase classname="test.test_chb3" name="test_unrelated" time="0.1"/>
+  </testsuite>
+</testsuites>

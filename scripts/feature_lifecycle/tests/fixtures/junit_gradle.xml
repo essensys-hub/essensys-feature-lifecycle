@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="fr.essensys.app.ShutterViewModelTest" tests="3" skipped="1" failures="0" errors="0" timestamp="2026-10-09T02:10:00" hostname="runner" time="0.4">
+  <properties/>
+  <testcase name="openShutter_sendsInjectIndex NR-android-phone-apps-3 #8" classname="fr.essensys.app.ShutterViewModelTest" time="0.2"/>
+  <testcase name="closeShutter_whenOffline_queuesCommand" classname="fr.essensys.app.ShutterViewModelTest" time="0.1">
+    <skipped/>
+    <system-out><![CDATA[# NR: NR-android-phone-apps-4 essensys-hub/essensys-android-phone-apps#9]]></system-out>
+  </testcase>
+  <testcase name="displaysShutterLabel" classname="fr.essensys.app.ShutterViewModelTest" time="0.1"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

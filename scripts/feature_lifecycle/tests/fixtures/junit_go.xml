@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="4" failures="1" errors="0" time="1.2">
+  <testsuite tests="4" failures="1" time="1.2" name="github.com/essensys-hub/essensys-server-backend/internal/api" timestamp="2026-10-09T02:00:00Z">
+    <properties>
+      <property name="go.version" value="go1.23.2 linux/amd64"></property>
+    </properties>
+    <testcase classname="github.com/essensys-hub/essensys-server-backend/internal/api" name="TestInjectScenario/NR-server-backend-12_#45" time="0.10"></testcase>
+    <testcase classname="github.com/essensys-hub/essensys-server-backend/internal/api" name="TestExchangeTableRestore" time="0.20">
+      <failure message="Failed" type="">=== RUN   TestExchangeTableRestore
+    exchange_test.go:42: NR: NR-server-backend-13 essensys-hub/essensys-server-backend#51
+    exchange_test.go:57: expected index 605 to be 0x01, got 0x00
+--- FAIL: TestExchangeTableRestore (0.20s)</failure>
+    </testcase>
+    <testcase classname="github.com/essensys-hub/essensys-server-backend/internal/api" name="TestLegacyMyActions" time="0.05">
+      <system-out>    legacy_test.go:12: // NR: NR-server-backend-14 #60</system-out>
+    </testcase>
+    <testcase classname="github.com/essensys-hub/essensys-server-backend/internal/api" name="TestHealthz" time="0.01"></testcase>
+  </testsuite>
+</testsuites>

@@ -1,9 +1,11 @@
 ---
 name: jira-xray-test-campaign
-description: Crée et maintient des campagnes de test Jira/Xray sur Atlassian Cloud, incluant découverte du projet, JQL, Test Plan, Test Execution, Test Set et liaisons Xray. Utiliser quand l'utilisateur mentionne Jira, Xray, campagne de test, Test Plan, Test Execution, Test Set, ou veut préparer/exécuter une campagne de tests dans ce projet.
+description: DÉPRÉCIÉ depuis 2026-10-09 (remplacé par github-project-lifecycle) — Crée et maintient des campagnes de test Jira/Xray sur Atlassian Cloud, incluant découverte du projet, JQL, Test Plan, Test Execution, Test Set et liaisons Xray. Utiliser quand l'utilisateur mentionne Jira, Xray, campagne de test, Test Plan, Test Execution, Test Set, ou veut préparer/exécuter une campagne de tests dans ce projet.
 ---
 
 # Jira + Xray Test Campaign
+
+> **Déprécié (2026-10-09)** : la gestion projet et les campagnes de test passent par le GitHub Project essensys-hub #6 — utiliser le skill `github-project-lifecycle`. Conservé uniquement pour l'archive Jira/Xray avant décommission (tâche 10.4 du change `github-project-lifecycle-2026-10-001`).
 
 Skill pour concevoir puis exécuter des campagnes de test Jira/Xray sur Atlassian Cloud.
 
