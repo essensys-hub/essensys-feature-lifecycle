@@ -1,0 +1,67 @@
+name: Project Sync
+
+# Workflow réutilisable : fait avancer l'item Feature du GitHub Project essensys-hub #6
+# à partir des événements de PR / gates / deploy (transitions vers l'avant uniquement).
+# Appel depuis un dépôt Essensys :
+#   jobs:
+#     project-sync:
+#       uses: essensys-hub/essensys-feature-lifecycle/.github/workflows/project-sync.yml@main
+#       with: { event: pr-opened }
+#       secrets: inherit
+
+on:
+  workflow_call:
+    inputs:
+      event:
+        description: "pr-opened | all-prs-merged | tests-passed | deployed | archived"
+        required: true
+        type: string
+      feature-id:
+        description: "Feature ID (sinon lu dans le corps de la PR, ligne 'Feature:')"
+        required: false
+        type: string
+    secrets:
+      PROJECT_SYNC_TOKEN:
+        description: "Token avec scope project + issues (GitHub App ou PAT fine-grained)"
+        required: true
+  workflow_dispatch:
+    inputs:
+      event:
+        required: true
+        type: choice
+        options: [spec-created, ready, pr-opened, all-prs-merged, tests-passed, deployed, archived]
+      feature-id:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout lifecycle scripts
+        uses: actions/checkout@v7
+        with:
+          repository: essensys-hub/essensys-feature-lifecycle
+          path: .lifecycle
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Advance Project item
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          EVENT: ${{ inputs.event }}
+          FEATURE_ID: ${{ inputs.feature-id }}
+        run: |
+          if [ -n "$FEATURE_ID" ]; then
+            python3 .lifecycle/scripts/feature_lifecycle/project_sync.py advance "$FEATURE_ID" "$EVENT" --apply
+          else
+            printf '%s' "$PR_BODY" > pr-body.md
+            python3 .lifecycle/scripts/feature_lifecycle/project_sync.py pr-event --pr-body-file pr-body.md --event "$EVENT" --apply
+          fi

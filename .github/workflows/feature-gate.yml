@@ -53,8 +53,43 @@ jobs:
           echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
           exit 0
 
+      - name: Check PR linkage (ticket + Feature ID + NR)
+        id: linkage
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FEATURE_GATE_MODE: ${{ vars.FEATURE_GATE_MODE || 'warn' }}
+        run: |
+          mkdir -p .artifacts
+          printf '%s' "$PR_BODY" > .artifacts/pr-body.md
+          gh pr diff "$PR_NUMBER" --name-only > .artifacts/changed-files.txt || true
+          # Numéros des issues de type Bug fermées par la PR (pour l'exigence NR).
+          bugs="$(gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){closingIssuesReferences(first:20){nodes{number issueType{name}}}}}}' \
+            -f o="${GITHUB_REPOSITORY%/*}" -f r="${GITHUB_REPOSITORY#*/}" -F n="$PR_NUMBER" \
+            -q '[.data.repository.pullRequest.closingIssuesReferences.nodes[]|select(.issueType.name=="Bug")|.number]|join(",")' || true)"
+          features_dir=()
+          [ -d features ] && features_dir=(--features-dir features)
+          set +e
+          python3 scripts/feature_lifecycle/check_pr_linkage.py "${features_dir[@]}" \
+            --pr-body-file .artifacts/pr-body.md \
+            --pr-author "$PR_AUTHOR" \
+            --labels "$PR_LABELS" \
+            --changed-files-file .artifacts/changed-files.txt \
+            --closes-bug-numbers "$bugs" \
+            --mode "$FEATURE_GATE_MODE" \
+            > .artifacts/pr-linkage.md 2>&1
+          exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          exit 0
+
       - name: Build PR comment
         id: comment
+        env:
+          FEATURE_GATE_MODE: ${{ vars.FEATURE_GATE_MODE || 'warn' }}
         run: |
           mkdir -p .artifacts
           {
@@ -72,6 +107,12 @@ jobs:
             echo "## Repository checks"
             echo
             cat .artifacts/feature-gate.md
+            if [ -f .artifacts/pr-linkage.md ]; then
+              echo
+              echo "## Ticket & PR linkage (mode: ${FEATURE_GATE_MODE:-warn})"
+              echo
+              cat .artifacts/pr-linkage.md
+            fi
           } > .artifacts/feature-gate-comment.md
           echo "comment_path=.artifacts/feature-gate-comment.md" >> "$GITHUB_OUTPUT"
 
@@ -127,5 +168,9 @@ jobs:
           fi
           if [ "${{ steps.repo.outputs.exit_code }}" != "0" ]; then
             echo "Feature gate repository checks failed."
+            exit 1
+          fi
+          if [ "${{ steps.linkage.outputs.exit_code }}" = "1" ]; then
+            echo "PR linkage failed (Feature: <id> / Closes #n / test NR-*)."
             exit 1
           fi

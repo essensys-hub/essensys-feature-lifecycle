@@ -15,7 +15,7 @@ Profil de l'équipe et des agents :
 - **Expert électronique, IoT et embarqué** (firmware SC944D, boards PIC16F946, protocole legacy IoT, table d'échange k/v).
 - **Sécurité avant tout** — la sécurité est un critère de blocage, jamais une option. Aucun secret en clair, gates sécurité obligatoires, principe du moindre privilège.
 - **Open source obligatoire** — pas d'outil propriétaire, pas de dépendance fermée non justifiée. Toolchain libre (GCC, pas d'IDE propriétaire), formats ouverts, licences compatibles.
-- **Traçabilité complète** — chaque feature est traçable depuis l'idée (Jira) jusqu'au déploiement, en passant par OpenSpec, issues/tasks, commits, tests, gates et docs.
+- **Traçabilité complète** — chaque modification est traçable depuis le ticket (GitHub Project essensys-hub #6) jusqu'au déploiement, en passant par OpenSpec, sub-issues, commits, tests, gates et docs.
 
 > Nous ne sommes plus chez Sanofi. Toute référence Sanofi / wise / eWise / Confluence interne est legacy et doit être retirée si rencontrée.
 
@@ -23,18 +23,19 @@ Profil de l'équipe et des agents :
 
 ## Process feature — bout en bout
 
-Chaque feature suit cette chaîne. La **documentation**, la **revue / autocritique** et la **mise à jour de la mémoire projet** sont continues, pas des étapes finales.
+Chaque modification suit cette chaîne, pilotée dans le **GitHub Project essensys-hub #6** (depuis le 2026-10-09 ; Jira/Xray/Confluence sont legacy). Gouvernance Claude Code : [`claude/GOVERNANCE.md`](claude/GOVERNANCE.md). La **documentation**, la **revue / autocritique** et la **mise à jour de la mémoire projet** sont continues, pas des étapes finales.
 
 ```
-Idée → Jira (SCRUM) → OpenSpec → Issues & Tasks Jira → Code → Test×N → Gate sécurité → Deploy (local + OVH)
+Ticket (Project #6) → OpenSpec → Sub-issues → Code → /checkup (unit · NR · app) → Gates → Deploy (local + OVH) → Archive
+ Idée                 Spec        Prêt         En cours  Test                       Gate sécu  Déployé              Archivé
          └──────────────  Documentation · Revue/autocritique · Mémoire (essensys-memory)  continues ──────────────┘
 ```
 
-1. **Backlog** — une nouvelle feature est postée dans le projet **Jira SCRUM** : <https://essensys-hub.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog>.
-2. **OpenSpec** — générer un change OpenSpec (`openspec-propose` / `/openspec-propose`) : proposal, design, specs, tasks. C'est le contrat de la feature.
-3. **Issues & Tasks** — créer les epics / stories / tasks dans Jira, reliées au change OpenSpec (skill `jira-xray-test-campaign` pour le pan test). Le code reste sur GitHub ; chaque commit/PR référence la clé Jira (`SCRUM-123`).
+1. **Ticket** — tout besoin (utilisateur, bug, évolution) devient une issue du Project #6 (`/ticket`). Pas de modification sans ticket.
+2. **OpenSpec** — si évolution : `/ticket-to-spec` génère le change OpenSpec (proposal, design, specs, tasks), le manifest `features/<id>.json` (bloc `github`) et le `Feature ID`. Correctif trivial : pas d'OpenSpec, décision tracée sur l'issue.
+3. **Sub-issues** — une `Task` par groupe de `tasks.md`, dans le dépôt cible, rattachée à l'issue Feature. Chaque commit référence l'issue `(#n)` ; chaque PR contient `Feature: <id>` + `Closes #n`.
 4. **Code** — implémenter selon les specs. Toolchain open source uniquement.
-5. **Test · Test · Test** — unitaires, intégration, E2E (Playwright pour les UIs). On ne livre rien sans tests verts.
+5. **Test · Test · Test** — `/checkup` : unitaires, non-régression `NR-*` ([`docs/feature-lifecycle/non-regression.md`](docs/feature-lifecycle/non-regression.md)), E2E (Playwright desktop/iPhone/iPad pour le web, émulateur Android, simulateur iOS), `no-armoire`. On ne livre rien sans tests verts ; tout Bug corrigé ajoute un test NR.
 6. **Gate sécurité** — open source : **gitleaks** (secrets) + **Trivy** (CVE deps + Docker/IaC) + Dependabot, via `security-gate.yml` et `security-gate-triage`. Bloquant. Pas de scanner propriétaire (GitGuardian = dashboard secrets optionnel au plus).
 7. **Documentation continue** — la doc est mise à jour **tout au long** du projet, jamais à la fin (doc centralisée, doc install gateway, user guides).
 8. **Deploy** — déploiement **local** (gateway / dev) **et OVH** (cloud).
@@ -123,14 +124,15 @@ Règles : ne **jamais** committer la clé privée age ni un secret déchiffré ;
 | `playwright-from-spec` | Générer les specs Playwright depuis OpenSpec |
 | `feature-lifecycle-bootstrap` | Initialiser le lifecycle dans un repo vide ou existant |
 | `security-gate-triage` | Trier secrets (gitleaks), CVE (Trivy), lint sécurité, alertes Dependabot |
-| `jira-xray-test-campaign` | Gestion projet Jira + campagnes de test Xray (epics/stories/tasks, Test Plan/Execution) |
+| `github-project-lifecycle` | Gestion projet GitHub Project #6 : tickets, ticket → OpenSpec, sub-issues, statuts, checkup, non-régression |
+| `jira-xray-test-campaign` | **Déprécié** (archive Jira/Xray avant décommission) |
 | `openspec-explore` / `propose` / `apply-change` / `archive-change` | Workflow OpenSpec |
 | `software-architecture` | Guidance architecture qualité |
 | `angular-architect` | Patterns front entreprise |
 | `gxp-unit-test-report-generator` | Rapports de tests unitaires auditables (traçabilité) |
 | `dry-run-install-procedure` | Procédures d'installation dry-run documentées |
 
-Gestion de projet : **Jira** (projet `SCRUM`, <https://essensys-hub.atlassian.net>). Le backlog, les epics/stories/tasks et le suivi vivent dans Jira ; GitHub ne sert qu'au code, aux PR et aux gates CI.
+Gestion de projet : **GitHub Project essensys-hub #6** (« Essensys Roadmap »). Tickets, features, sub-issues, campagnes de test et non-régression y vivent ; Claude Code y est connecté (`gh` scope `project`, commandes `/ticket`, `/ticket-to-spec`, `/checkup`, `/feature-status`, `/nonreg` installées par `scripts/install-claude.sh`). Jira SCRUM est legacy (tickets clos au 2026-10-09).
 
 ### Rules
 
@@ -150,9 +152,11 @@ Gestion de projet : **Jira** (projet `SCRUM`, <https://essensys-hub.atlassian.ne
 
 ```text
 bootstrap feature lifecycle
-new feature SCRUM-123
+/ticket <besoin>
+/ticket-to-spec essensys-hub/<repo>#<n>
+/checkup <repo|feature-id>
 openspec propose <feature>
-create jira tasks for this change
+create sub-issues for this change
 generate e2e tests for this feature
 triage security findings
 sync user guide for this feature
@@ -165,12 +169,12 @@ update essensys-memory
 
 ### Toujours faire
 
-- Partir du **backlog Jira (SCRUM)** et d'un **change OpenSpec** ; ne jamais coder une feature sans spec.
+- Partir d'un **ticket du GitHub Project #6** (et d'un **change OpenSpec** pour toute évolution) ; ne jamais modifier un dépôt sans ticket, ni coder une feature sans spec.
 - Garder **doc, tests, manifest et mémoire** alignés en continu.
 - Valider les manifests contre `features/schema/feature.schema.json` avant commit.
 - Passer la **gate sécurité** (`security-gate-triage` + Dependabot) ; la traiter comme bloquante.
 - Préférer / imposer des solutions **open source** ; justifier toute dépendance.
-- Assurer la **traçabilité** : commit/PR ↔ clé Jira (`SCRUM-123`) ↔ task ↔ change OpenSpec.
+- Assurer la **traçabilité** : commit/PR ↔ issue (`#n`) ↔ `Feature ID` ↔ change OpenSpec ↔ manifest.
 - Pratiquer la **revue et l'autocritique** à chaque étape, pas seulement en fin de projet.
 - Mettre à jour `essensys-memory` dès qu'un critère d'update est rempli.
 - Respecter les jumeaux à synchroniser : `essensys-server-frontend` ↔ `essensys-user-portal-frontend`, `essensys-server-backend` ↔ `essensys-user-portal-backend`.
@@ -187,7 +191,8 @@ update essensys-memory
 ### Checklist PR
 
 - [ ] Change OpenSpec lié (ou N/A justifié)
-- [ ] Issues / tasks Jira (SCRUM) mises à jour, clé Jira dans le titre de PR
+- [ ] `Feature: <id>` + `Closes #n` dans la PR, sub-issues à jour dans le Project #6
+- [ ] `/checkup` vert (unit · NR · app), test `NR-*` ajouté si Bug corrigé
 - [ ] Tests verts (unit / intégration / E2E)
 - [ ] Gate sécurité passée
 - [ ] Documentation mise à jour

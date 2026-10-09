@@ -1,0 +1,131 @@
+name: Non-regression
+
+# Workflow réutilisable : exécute la suite de non-régression d'un dépôt Essensys,
+# consolide les résultats NR-* (nonreg_report.py), archive le rapport et trace les échecs
+# comme Bugs dans le GitHub Project essensys-hub #6. Jamais d'armoire réelle (NO_ARMOIRE=1).
+# Appel :
+#   on: { pull_request: {}, schedule: [{cron: '0 2 * * *'}], workflow_dispatch: {} }
+#   jobs:
+#     nonreg:
+#       uses: essensys-hub/essensys-feature-lifecycle/.github/workflows/nonreg.yml@main
+#       with:
+#         test-command: ./gradlew testDebugUnitTest
+#         results-glob: "app/build/test-results/**/*.xml"
+#       secrets: inherit
+
+on:
+  workflow_call:
+    inputs:
+      test-command:
+        description: "Commande qui exécute les tests (doit produire JUnit XML ou JSON Playwright)"
+        required: true
+        type: string
+      results-glob:
+        description: "Glob des fichiers de résultats (JUnit XML / Playwright JSON)"
+        required: true
+        type: string
+      sources:
+        description: "Dossiers sources scannés pour les commentaires `NR: <id> <issue>` (Kotlin, Go)"
+        required: false
+        type: string
+        default: ""
+      setup:
+        description: "go | node | java | python (environnement à préparer)"
+        required: false
+        type: string
+        default: ""
+      track-failures:
+        description: "Ouvrir/commenter les Bugs regression (nightly / main uniquement)"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      PROJECT_SYNC_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  nonreg:
+    runs-on: ubuntu-latest
+    env:
+      NO_ARMOIRE: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Checkout lifecycle scripts
+        uses: actions/checkout@v7
+        with:
+          repository: essensys-hub/essensys-feature-lifecycle
+          path: .lifecycle
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - if: inputs.setup == 'go'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - if: inputs.setup == 'go'
+        run: go install gotest.tools/gotestsum@latest
+
+      - if: inputs.setup == 'node'
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - if: inputs.setup == 'java'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Restore previous report (history / flaky detection)
+        uses: dawidd6/action-download-artifact@v11
+        continue-on-error: true
+        with:
+          name: nonreg-report
+          workflow_conclusion: ""
+          branch: ${{ github.event.repository.default_branch }}
+          path: .previous
+
+      - name: Run tests
+        id: tests
+        continue-on-error: true
+        run: ${{ inputs.test-command }}
+
+      - name: Build NR report
+        id: report
+        run: |
+          mkdir -p .artifacts
+          shopt -s globstar nullglob
+          files=( ${{ inputs.results-glob }} )
+          history=()
+          [ -f .previous/nonreg.json ] && history=(--history .previous/nonreg.json)
+          set +e
+          sources=()
+          [ -n "${{ inputs.sources }}" ] && sources=(--sources ${{ inputs.sources }})
+          python3 .lifecycle/scripts/feature_lifecycle/nonreg_report.py "${history[@]}" "${sources[@]}" \
+            --out .artifacts/nonreg.json --markdown .artifacts/nonreg.md "${files[@]}"
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat .artifacts/nonreg.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nonreg-report
+          path: .artifacts/
+          retention-days: 90
+
+      - name: Track failures in Project #6
+        if: inputs.track-failures
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_SYNC_TOKEN }}
+        run: python3 .lifecycle/scripts/feature_lifecycle/project_sync.py regression --report .artifacts/nonreg.json --apply
+
+      - name: Fail on test or NR report errors
+        run: |
+          if [ "${{ steps.tests.outcome }}" != "success" ]; then echo "Tests en échec"; exit 1; fi
+          if [ "${{ steps.report.outputs.exit_code }}" != "0" ]; then echo "Rapport NR en erreur (NR sans référence d'issue ?)"; exit 1; fi

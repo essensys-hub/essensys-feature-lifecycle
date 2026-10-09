@@ -17,22 +17,24 @@ Essensys — solution **domotique**, expertise électronique / IoT / embarqué. 
 La doc, la revue/autocritique et la mise à jour de la mémoire (`essensys-memory`) sont **continues** — pas des étapes finales.
 
 ```
-Idée → Jira (SCRUM) → OpenSpec → Issues & Tasks Jira → Code → Test×N → Gate sécurité → Deploy (local + OVH)
+Ticket (Project #6) → OpenSpec → Sub-issues → Code → /checkup (unit · NR · app) → Gates → Deploy (local + OVH) → Archive
          └──────────  Documentation · Revue/autocritique · Mémoire (essensys-memory)  continues ──────────┘
 ```
 
 | # | Étape | Outil / artefact |
 |---|---|---|
-| 1 | Backlog | Projet **Jira SCRUM** → <https://essensys-hub.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog> |
-| 2 | Spec | Change OpenSpec (`openspec-propose`) : proposal, design, specs, tasks |
-| 3 | Découpage | Epics / stories / tasks dans Jira (`jira-xray-test-campaign`) |
-| 4 | Code | Implémentation selon les specs, toolchain open source |
-| 5 | Tests | Unit / intégration / E2E + gate UX desktop/iPhone/iPad obligatoire pour les UIs (Playwright + no-armoire) |
-| 6 | Sécurité | open source : gitleaks (secrets) + Trivy (CVE/IaC) + Dependabot, via `security-gate.yml` (bloquant) |
-| 7 | Doc | Mise à jour **continue** (doc centralisée, install, user guides) |
+| 1 | Ticket | **GitHub Project essensys-hub #6** « Essensys Roadmap » — `/ticket` (pas de modification sans ticket) |
+| 2 | Spec | `/ticket-to-spec` → change OpenSpec + manifest `features/<id>.json` (bloc `github`) |
+| 3 | Découpage | Sub-issues `Task` par groupe de `tasks.md`, statut avancé par `project_sync.py` |
+| 4 | Code | Implémentation selon les specs, toolchain open source ; PR `Feature: <id>` + `Closes #n` |
+| 5 | Tests | `/checkup` : unit, non-régression `NR-*`, Playwright desktop/iPhone/iPad, émulateur Android, simulateur iOS, `no-armoire` |
+| 6 | Sécurité | gitleaks + Trivy + Dependabot via `security-gate.yml` (bloquant) |
+| 7 | Doc | Mise à jour **continue** |
 | 8 | Deploy | Local (gateway / dev) **et** OVH (cloud) |
-| 9 | Revue | Autocritique à chaque étape + Bugbot / security-review |
-| 10 | Mémoire | Mise à jour permanente de `essensys-memory` |
+| 9 | Revue | Autocritique à chaque étape |
+| 10 | Mémoire | `essensys-memory` mis à jour en continu |
+
+Harness Claude Code : `scripts/install-claude.sh` (commandes + [`claude/GOVERNANCE.md`](claude/GOVERNANCE.md)), vérification `scripts/feature_lifecycle/check_claude_setup.sh`. Jira / Xray / Confluence sont legacy depuis le 2026-10-09 (change `github-project-lifecycle-2026-10-001`).
 
 Le pivot reste **un manifest versionné par feature**, validé par JSON Schema et consommé par chaque gate CI :
 

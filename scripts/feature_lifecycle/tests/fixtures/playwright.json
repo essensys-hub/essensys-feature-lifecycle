@@ -1,0 +1,64 @@
+{
+  "config": {"version": "1.48.0"},
+  "suites": [
+    {
+      "title": "scenarios.spec.ts",
+      "file": "tests/e2e/scenarios.spec.ts",
+      "specs": [],
+      "suites": [
+        {
+          "title": "Scénarios",
+          "file": "tests/e2e/scenarios.spec.ts",
+          "specs": [
+            {
+              "title": "lance un scénario sans armoire @nr",
+              "file": "tests/e2e/scenarios.spec.ts",
+              "tags": ["@nr", "@NR-server-frontend-3"],
+              "tests": [
+                {
+                  "projectName": "chromium-desktop",
+                  "annotations": [{"type": "nr", "description": "NR-server-frontend-3"}, {"type": "issue", "description": "#12"}],
+                  "status": "expected",
+                  "results": [{"status": "passed", "retry": 0}]
+                },
+                {
+                  "projectName": "webkit-iphone",
+                  "annotations": [{"type": "nr", "description": "NR-server-frontend-3"}, {"type": "issue", "description": "#12"}],
+                  "status": "unexpected",
+                  "results": [{"status": "failed", "retry": 0}, {"status": "timedOut", "retry": 1}]
+                }
+              ]
+            },
+            {
+              "title": "restaure les volets NR-server-frontend-4",
+              "file": "tests/e2e/scenarios.spec.ts",
+              "tags": ["@nr"],
+              "tests": [
+                {
+                  "projectName": "chromium-desktop",
+                  "annotations": [{"type": "issue", "description": "https://github.com/essensys-hub/essensys-server-frontend/issues/30"}],
+                  "status": "flaky",
+                  "results": [{"status": "failed", "retry": 0}, {"status": "passed", "retry": 1}]
+                }
+              ]
+            },
+            {
+              "title": "éclairage sans référence @nr",
+              "file": "tests/e2e/scenarios.spec.ts",
+              "tags": ["@nr"],
+              "tests": [
+                {"projectName": "chromium-desktop", "annotations": [{"type": "nr", "description": "NR-server-frontend-5"}], "status": "expected", "results": [{"status": "passed"}]}
+              ]
+            },
+            {
+              "title": "affiche le tableau de bord",
+              "file": "tests/e2e/scenarios.spec.ts",
+              "tags": [],
+              "tests": [{"projectName": "chromium-desktop", "annotations": [], "status": "expected", "results": [{"status": "passed"}]}]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
