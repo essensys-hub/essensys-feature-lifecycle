@@ -13,6 +13,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
+import triage
+
 
 OWNER = os.environ.get("ESSENSYS_PROJECT_OWNER", "essensys-hub")
 PROJECT_NUMBER = int(os.environ.get("ESSENSYS_PROJECT_NUMBER", "6"))
@@ -168,7 +170,8 @@ query($owner: String!, $number: Int!, $cursor: String) {
           id
           content {
             __typename
-            ... on Issue { number title url state repository { nameWithOwner } issueType { name } }
+            ... on Issue { number title url state repository { nameWithOwner } issueType { name }
+                           labels(first: 20) { nodes { name } } author { login __typename } }
             ... on PullRequest { number title url state repository { nameWithOwner } }
             ... on DraftIssue { title }
           }
@@ -307,6 +310,9 @@ def _normalize_item(node: dict[str, Any]) -> dict[str, Any]:
             "state": content.get("state"),
             "repo": repo,
             "issue_type": (content.get("issueType") or {}).get("name"),
+            "labels": [n.get("name", "") for n in ((content.get("labels") or {}).get("nodes") or []) if n],
+            "author": (content.get("author") or {}).get("login"),
+            "author_type": (content.get("author") or {}).get("__typename"),
         },
         "fields": _field_values((node.get("fieldValues") or {}).get("nodes")),
     }
@@ -509,6 +515,7 @@ class AdvanceResult:
     target: str
     applied_status: str | None
     message: str
+    refused: bool = False
 
 
 def advance(client: GhClient, feature_id: str, event: str, *, dry_run: bool | None = None) -> AdvanceResult:
@@ -520,6 +527,12 @@ def advance(client: GhClient, feature_id: str, event: str, *, dry_run: bool | No
         return AdvanceResult(feature_id, event, None, None, target, None,
                              f"No Project item carries Feature ID `{feature_id}`.")
     current = item["fields"].get(STATUS_FIELD)
+    # report-triage-2026-10-005 : une feature dont l'issue n'est pas validée n'avance pas.
+    blocking = [label for label in item["content"].get("labels") or [] if label.lower() in triage.BLOCKING_LABELS]
+    if blocking:
+        return AdvanceResult(feature_id, event, item["id"], current, target, None,
+                             f"Refusé : l'issue de la feature porte `{blocking[0]}` ; un mainteneur doit poser `valide`.",
+                             refused=True)
     new_status = next_status(current, target)
     if new_status is None:
         return AdvanceResult(feature_id, event, item["id"], current, target, None,
@@ -742,7 +755,7 @@ def main(argv: list[str] | None = None, client: GhClient | None = None) -> int:
         result = advance(client, feature_id, event)
         markdown = f"# Project sync ({mode})\n\n- Feature: `{feature_id}`\n- Event: `{event}`\n- {result.message}"
         _emit(args, {"mode": mode, **asdict(result)}, markdown)
-        return 0
+        return triage.EXIT_NOT_WORKABLE if result.refused else 0
 
     if args.command == "regression":
         report = json.loads(Path(args.report).read_text(encoding="utf-8"))

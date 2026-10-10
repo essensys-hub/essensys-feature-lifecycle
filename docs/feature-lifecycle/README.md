@@ -22,6 +22,7 @@ Idée → Jira (SCRUM) → OpenSpec → Issues & Tasks Jira → Code → Test×N
 | Travailler au quotidien | [Workflow quotidien](daily-workflow.fr.md) | [Daily workflow](daily-workflow.en.md) |
 | Comprendre pourquoi une PR est bloquée | [Dépannage](troubleshooting.fr.md) | [Troubleshooting](troubleshooting.en.md) |
 | Orchestrer l'IA / passer en subagents | [Orchestration IA & subagents](ai-orchestration.md) | — |
+| Trier un signalement ou une issue de tiers (`a-valider` / `valide`) | [Tri des signalements](triage.md) | — |
 
 > Gestion de projet : **Jira** (projet `SCRUM`). Le backlog et les tasks vivent dans Jira ; GitHub ne sert qu'au code et aux gates CI.
 

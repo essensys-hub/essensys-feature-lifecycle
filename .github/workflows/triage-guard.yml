@@ -1,0 +1,44 @@
+name: Triage Guard
+
+# Workflow réutilisable (report-triage-2026-10-005) : garde-fou des labels de tri.
+#  - issue ouverte par un non-mainteneur → `a-valider` ;
+#  - `valide` posé par un non-mainteneur ou un bot → retiré, avec un commentaire ;
+#  - `valide` posé par un mainteneur (rôle maintain/admin, via l'équipe maintainers) → retire `a-valider` / `besoin-info`.
+# Appel depuis un dépôt qui reçoit des signalements (voir setup_triage_repo.py) :
+#   on: { issues: { types: [opened, reopened, labeled, unlabeled] } }
+#   permissions: { issues: write, contents: read }
+#   jobs:
+#     triage:
+#       uses: essensys-hub/essensys-feature-lifecycle/.github/workflows/triage-guard.yml@main
+
+on:
+  workflow_call:
+    inputs:
+      lifecycle-ref:
+        description: "Référence des scripts essensys-feature-lifecycle"
+        required: false
+        type: string
+        default: main
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.issue.pull_request }}
+    steps:
+      - name: Scripts lifecycle
+        uses: actions/checkout@v7
+        with:
+          repository: essensys-hub/essensys-feature-lifecycle
+          ref: ${{ inputs.lifecycle-ref }}
+          path: .lifecycle
+
+      - name: Décision et application
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 .lifecycle/scripts/feature_lifecycle/triage_guard.py \
+            --event-path "$GITHUB_EVENT_PATH" --apply | tee -a "$GITHUB_STEP_SUMMARY"
