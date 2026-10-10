@@ -1,0 +1,92 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "report-triage-2026-10-005",
+  "title": "Validation humaine des signalements avant tout travail de Claude",
+  "status": "proposed",
+  "owner": "nrineau",
+  "github": {
+    "issue": "essensys-hub/essensys-feature-lifecycle#18",
+    "project_item": "PVTI_lADODqt0Wc4BavHTzg_3MMA"
+  },
+  "git": {
+    "branch": "feat/report-triage-2026-10-005",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "report-triage-2026-10-005",
+    "path": "openspec/changes/report-triage-2026-10-005",
+    "proposal": "openspec/changes/report-triage-2026-10-005/proposal.md",
+    "design": "openspec/changes/report-triage-2026-10-005/design.md",
+    "tasks": "openspec/changes/report-triage-2026-10-005/tasks.md",
+    "specs": [
+      "openspec/changes/report-triage-2026-10-005/specs/report-triage/spec.md"
+    ]
+  },
+  "implementation": {
+    "paths": [
+      "claude/GOVERNANCE.md",
+      "claude/commands/ticket-to-spec.md",
+      "claude/commands/checkup.md",
+      "scripts/feature_lifecycle/project_sync.py",
+      "scripts/install-claude.sh"
+    ],
+    "primary_surface": "ci"
+  },
+  "userguide": {
+    "pages": [
+      "docs/feature-lifecycle/README.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "pytest": [
+      "scripts/feature_lifecycle/tests/test_project_sync.py"
+    ],
+    "coverage_must_test": [
+      "unvalidated report is not workable",
+      "bot is never maintainer",
+      "advance refused on a valider",
+      "valide by non maintainer is removed",
+      "hook blocks gh add label valide"
+    ],
+    "smoke_tags": [
+      "@nr",
+      "@security"
+    ]
+  },
+  "release": {
+    "changelog_entry": "Validation humaine obligatoire (labels a-valider / valide) des signalements et issues de tiers avant tout travail de Claude : workflow triage-guard, gate des commandes, hook local.",
+    "target_tag": null,
+    "surfaces": [
+      "essensys-feature-lifecycle",
+      "essensys-support-site",
+      "essensys-support",
+      "essensys-user-portal-backend"
+    ],
+    "paths": [
+      "claude/GOVERNANCE.md"
+    ]
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": "openspec/changes/report-triage-2026-10-005/design.md",
+    "owner_security": "nrineau"
+  }
+}
