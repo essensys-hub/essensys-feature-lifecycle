@@ -20,7 +20,7 @@
 
 ## 4. Bot — essensys-user-portal-backend (essensys-user-portal-backend#30)
 
-- [ ] 4.1 `internal/support` : label `a-valider` ajouté à la création (D4) ; vérifier par `Test_NR_backend_8_report_is_created_a_valider`, puis le rapport NR
+- [x] 4.1 `internal/support` : label `a-valider` ajouté à la création (D4) ; vérifier par `Test_NR_backend_8_report_is_created_a_valider`, puis le rapport NR
 
 ## 5. Mise en service et livraison — essensys-feature-lifecycle (#22)
 
