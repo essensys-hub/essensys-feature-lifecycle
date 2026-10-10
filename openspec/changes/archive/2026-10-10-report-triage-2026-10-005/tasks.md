@@ -26,5 +26,5 @@
 
 - [x] 5.1 Action humaine (admin de l'org) : créer l'équipe `maintainers`, lui donner le rôle `maintain` sur `essensys-support-site`, `essensys-support` et `essensys-feature-lifecycle`, y ajouter les membres ; vérifier par `gh api /orgs/essensys-hub/teams/maintainers/repos` — fait le 2026-10-10 : équipe créée (rhinosys), rôle conservé à `write` par choix (seuls les admins sont mainteneurs, voir la doc du tri)
 - [x] 5.2 Après fusion : `setup_triage_repo.py --apply` sur les deux dépôts (avec accord), lancer `install-claude.sh` et déployer le backend ; vérifier qu'une issue de test ouverte par un non-mainteneur dans `essensys-support` reçoit `a-valider`, et que `valide` posé par le bot est retiré — fait le 2026-10-10 : essensys-support#2 (a-valider ajouté, valide du bot retiré et commenté), hook vérifié en session ; redéploiement backend et fusion de essensys-support-site#10 en attente
-- [ ] 5.3 Rattrapage des issues ouvertes existantes (dry-run, puis `--apply` avec accord), `/checkup report-triage-2026-10-005` vert et rapport posté sur #18
-- [ ] 5.4 Mettre à jour essensys-memory (wiki [[Feature Lifecycle]], `log.md`, roadmap) ; vérifier que `wiki/index.md` reste cohérent
+- [x] 5.3 Rattrapage des issues ouvertes existantes (dry-run, puis `--apply` avec accord), `/checkup report-triage-2026-10-005` vert et rapport posté sur #18
+- [x] 5.4 Mettre à jour essensys-memory (wiki [[Feature Lifecycle]], `log.md`, roadmap) ; vérifier que `wiki/index.md` reste cohérent

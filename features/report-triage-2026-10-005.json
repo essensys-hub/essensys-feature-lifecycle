@@ -2,7 +2,7 @@
   "$schema": "./schema/feature.schema.json",
   "id": "report-triage-2026-10-005",
   "title": "Validation humaine des signalements avant tout travail de Claude",
-  "status": "in-progress",
+  "status": "archived",
   "owner": "nrineau",
   "github": {
     "issue": "essensys-hub/essensys-feature-lifecycle#18",
@@ -14,12 +14,12 @@
   },
   "openspec": {
     "change_id": "report-triage-2026-10-005",
-    "path": "openspec/changes/report-triage-2026-10-005",
-    "proposal": "openspec/changes/report-triage-2026-10-005/proposal.md",
-    "design": "openspec/changes/report-triage-2026-10-005/design.md",
-    "tasks": "openspec/changes/report-triage-2026-10-005/tasks.md",
+    "path": "openspec/changes/archive/2026-10-10-report-triage-2026-10-005",
+    "proposal": "openspec/changes/archive/2026-10-10-report-triage-2026-10-005/proposal.md",
+    "design": "openspec/changes/archive/2026-10-10-report-triage-2026-10-005/design.md",
+    "tasks": "openspec/changes/archive/2026-10-10-report-triage-2026-10-005/tasks.md",
     "specs": [
-      "openspec/changes/report-triage-2026-10-005/specs/report-triage/spec.md"
+      "openspec/specs/report-triage/spec.md"
     ]
   },
   "implementation": {
@@ -96,7 +96,7 @@
       "last_scan_at": null
     },
     "muted_findings": [],
-    "threat_model_url": "openspec/changes/report-triage-2026-10-005/design.md",
+    "threat_model_url": "openspec/changes/archive/2026-10-10-report-triage-2026-10-005/design.md",
     "owner_security": "nrineau"
   }
 }
