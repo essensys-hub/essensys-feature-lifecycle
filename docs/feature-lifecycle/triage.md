@@ -50,5 +50,7 @@ Commiter ensuite `.github/workflows/triage-guard.yml` dans le dépôt, par une P
 
 ## Limites connues
 
+- **Rôle de l'équipe** : l'équipe `maintainers` a aujourd'hui le rôle **Write** sur les dépôts, pas **Maintain**. Seuls les **administrateurs** de l'org sont donc reconnus comme mainteneurs. Pour qu'un membre de l'équipe qui n'est pas administrateur puisse valider, passer l'équipe en **Maintain** sur le dépôt.
+
 - Les sessions Claude utilisent le jeton GitHub de l'utilisateur : vu de GitHub, une action de Claude ressemble à celle d'un humain. Le hook protège les sessions du poste où il est installé ; ailleurs, la protection repose sur la gate et sur la Règle n°2 de `GOVERNANCE.md`.
 - Les actions faites par le workflow lui-même (`github-actions[bot]`) ne relancent pas de workflow. C'est pourquoi un refus de validation remet aussi `a-valider` directement.
