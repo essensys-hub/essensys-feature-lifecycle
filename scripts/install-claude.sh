@@ -6,6 +6,8 @@
 # Ce script les installe dans l'espace de travail ESSENSYS (parent de ce dépôt par défaut) :
 #   - <workspace>/.claude/commands/*.md       (copie des commandes)
 #   - <workspace>/CLAUDE.md                   (bloc d'import @…/claude/GOVERNANCE.md)
+#   - <workspace>/.claude/hooks/*.py          (hooks, ex. block_self_validation.py)
+#   - <workspace>/.claude/settings.json       (hook PreToolUse fusionné, autres réglages conservés)
 #
 # Usage:
 #   ./scripts/install-claude.sh                 # → workspace = dossier parent
@@ -58,6 +60,26 @@ else
   { [ -s "$CLAUDE_MD" ] && echo; echo "$BLOCK"; } >> "$CLAUDE_MD"
 fi
 
+# Hook PreToolUse : Claude ne pose jamais le label `valide` (report-triage-2026-10-005).
+mkdir -p "$WORKSPACE/.claude/hooks"
+cp "$SRC_DIR"/claude/hooks/*.py "$WORKSPACE/.claude/hooks/"
+python3 - "$WORKSPACE/.claude/settings.json" <<'PY'
+import json, os, sys
+path = sys.argv[1]
+settings = {}
+if os.path.exists(path) and os.path.getsize(path) > 0:
+    with open(path, encoding="utf-8") as handle:
+        settings = json.load(handle)
+command = 'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/block_self_validation.py"'
+pre = settings.setdefault("hooks", {}).setdefault("PreToolUse", [])
+present = any(h.get("command") == command for entry in pre for h in entry.get("hooks", []))
+if not present:
+    pre.append({"matcher": "Bash|mcp__.*", "hooks": [{"type": "command", "command": command}]})
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(settings, handle, indent=2, ensure_ascii=False)
+    handle.write("\n")
+PY
+
 count="$(ls "$SRC_DIR"/claude/commands/*.md | wc -l | tr -d ' ')"
-echo "Installé dans $WORKSPACE : ${count} commandes (.claude/commands), gouvernance importée dans CLAUDE.md."
+echo "Installé dans $WORKSPACE : ${count} commandes (.claude/commands), gouvernance importée dans CLAUDE.md, hook block_self_validation (.claude/settings.json)."
 echo "Vérifier le setup : $SRC_DIR/scripts/feature_lifecycle/check_claude_setup.sh"

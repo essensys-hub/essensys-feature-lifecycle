@@ -7,6 +7,7 @@ Cible : $ARGUMENTS
 
 Suis `essensys-feature-lifecycle/claude/GOVERNANCE.md`. Exécute réellement chaque étape, ne suppose jamais un résultat. **Jamais d'armoire réelle** : `NO_ARMOIRE=1`, serveurs mock/locaux uniquement.
 
+0. **Gate de tri** (Règle n°2) : `python3 essensys-feature-lifecycle/scripts/feature_lifecycle/triage_gate.py <issue liée>`. Si le code n'est pas 0, **s'arrêter** : afficher la raison et l'action attendue d'un mainteneur. Les vérifications locales en lecture seule restent permises ; ne rien poster ni faire avancer.
 1. **Résoudre la cible** : Feature ID → manifest (`features/<id>.json`, champ `github.issue`, `implementation.paths` → dépôts) ; repo → dossier `ESSENSYS/<repo>` ; issue liée = issue Feature (ou dernière issue ouverte du Project pour ce dépôt, à confirmer).
 2. **Détecter la pile** et lancer, en notant OK/KO/N.A. + durée + extrait d'erreur :
 

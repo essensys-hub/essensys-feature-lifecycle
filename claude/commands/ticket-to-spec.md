@@ -7,6 +7,7 @@ Ticket : $ARGUMENTS
 
 Suis `essensys-feature-lifecycle/claude/GOVERNANCE.md`.
 
+0. **Gate de tri** (Règle n°2) : `python3 essensys-feature-lifecycle/scripts/feature_lifecycle/triage_gate.py <ref>`. Si le code n'est pas 0, **s'arrêter** : afficher la raison et l'action attendue d'un mainteneur. Aucune écriture, aucun change, aucun commentaire.
 1. **Lire** le ticket : `gh issue view <ref> --json title,body,labels,issueType,comments,url` et l'item Project (`project_sync.py status` si `Feature ID` déjà présent).
 2. **Décider** OpenSpec ou correctif trivial :
    - Trivial (une PR, aucun comportement spécifié ne change) → poster en commentaire « Correctif trivial, pas d'OpenSpec : <raison> » (après confirmation) et s'arrêter.

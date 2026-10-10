@@ -2,7 +2,7 @@
   "$schema": "./schema/feature.schema.json",
   "id": "report-triage-2026-10-005",
   "title": "Validation humaine des signalements avant tout travail de Claude",
-  "status": "proposed",
+  "status": "in-progress",
   "owner": "nrineau",
   "github": {
     "issue": "essensys-hub/essensys-feature-lifecycle#18",
@@ -24,17 +24,24 @@
   },
   "implementation": {
     "paths": [
+      "scripts/feature_lifecycle/triage.py",
+      "scripts/feature_lifecycle/triage_gate.py",
+      "scripts/feature_lifecycle/triage_guard.py",
+      "scripts/feature_lifecycle/list_workable.py",
+      "scripts/feature_lifecycle/setup_triage_repo.py",
+      "scripts/feature_lifecycle/project_sync.py",
+      ".github/workflows/triage-guard.yml",
+      "claude/hooks/block_self_validation.py",
       "claude/GOVERNANCE.md",
       "claude/commands/ticket-to-spec.md",
       "claude/commands/checkup.md",
-      "scripts/feature_lifecycle/project_sync.py",
       "scripts/install-claude.sh"
     ],
     "primary_surface": "ci"
   },
   "userguide": {
     "pages": [
-      "docs/feature-lifecycle/README.md"
+      "docs/feature-lifecycle/triage.md"
     ],
     "language": "fr",
     "i18n_keys": [],
@@ -43,7 +50,8 @@
   "tests": {
     "playwright": [],
     "pytest": [
-      "scripts/feature_lifecycle/tests/test_project_sync.py"
+      "scripts/feature_lifecycle/tests/test_triage.py",
+      "scripts/feature_lifecycle/tests/test_triage_hook.py"
     ],
     "coverage_must_test": [
       "unvalidated report is not workable",
@@ -67,7 +75,9 @@
       "essensys-user-portal-backend"
     ],
     "paths": [
-      "claude/GOVERNANCE.md"
+      "claude/GOVERNANCE.md",
+      ".github/workflows/triage-guard.yml",
+      "scripts/feature_lifecycle/triage_gate.py"
     ]
   },
   "security": {
