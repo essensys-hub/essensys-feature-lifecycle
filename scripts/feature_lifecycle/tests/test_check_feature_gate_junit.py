@@ -79,3 +79,52 @@ class NativeMobileSurfaceTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+GO = """
+package support
+
+// NR: NR-backend-3 essensys-hub/essensys-feature-lifecycle#15
+func TestNR_backend_3_sixth_report_in_24h_is_429(t *testing.T) {}
+
+func TestCreateBug_OpensAnonymisedPublicIssue(t *testing.T) {}
+
+func BenchmarkX(b *testing.B) {}
+func helperTest(t *testing.T) {}
+"""
+
+
+class GoTitlesTest(unittest.TestCase):
+    """Les tests Go (`func TestXxx(t *testing.T)`) comptent pour coverage_must_test (backend)."""
+
+    def titles(self) -> list[str]:
+        return [gate.go_title(m.group("title")) for m in gate.GO_TEST_TITLE_PATTERN.finditer(GO)]
+
+    def test_extracts_only_go_tests(self) -> None:
+        titles = self.titles()
+        self.assertEqual(len(titles), 2)
+        self.assertEqual(gate.normalize(titles[1]), ["create", "bug", "opens", "anonymised", "public", "issue"])
+
+    def test_requirements_match_go_titles(self) -> None:
+        titles = self.titles()
+        self.assertTrue(gate.title_matches("sixth report in 24h is 429", titles))
+        self.assertTrue(gate.title_matches("create bug opens anonymised public issue", titles))
+
+
+class SurfaceTest(unittest.TestCase):
+    """Une feature `api` d'un dépôt nommé « …-portal-backend » n'est pas une UI."""
+
+    def manifest(self, primary: str) -> dict:
+        return {
+            "implementation": {"primary_surface": primary, "paths": ["internal/support/routes.go"]},
+            "release": {"surfaces": ["essensys-user-portal-backend"]},
+        }
+
+    def test_api_surface_is_not_ui(self) -> None:
+        self.assertFalse(gate.is_ui_feature(self.manifest("api")))
+
+    def test_mixed_surface_is_ui(self) -> None:
+        self.assertTrue(gate.is_ui_feature(self.manifest("mixed")))
+
+    def test_undeclared_surface_falls_back_to_path_hints(self) -> None:
+        self.assertTrue(gate.is_ui_feature(self.manifest(None)))
