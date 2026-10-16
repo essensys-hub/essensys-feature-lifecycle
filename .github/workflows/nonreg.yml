@@ -60,7 +60,7 @@ jobs:
           repository: essensys-hub/essensys-feature-lifecycle
           path: .lifecycle
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
