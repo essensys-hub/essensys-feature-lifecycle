@@ -13,9 +13,11 @@ Demande : $ARGUMENTS
    - Type : `Bug` (régression/défaut), `Task` (travail technique), `Feature` (évolution), `Support` (question utilisateur)
    - Dépôt cible (`Feature` → `essensys-feature-lifecycle` ; sinon le dépôt où le code change ; jumeaux → une Task par jumeau)
    - Titre (impératif, ≤ 80 car.), corps (contexte, critères d'acceptation vérifiables, appareil/version), champs Project : `Phase`, `Cible` (gateway/cloud/firmware/mobile/infra/doc), `Appareil`
+   - **Matrice des briques** (obligatoire pour une `Feature`, jamais de « je verrai plus tard ») : une ligne par brique, `concernée` ou `non concernée + raison`, à faire valider par l'utilisateur. Briques : `cloud` (user-portal-backend), `portail-cloud` (user-portal-frontend), `gateway-cm5` (server-backend + server-frontend), `raspberry-pi` (raspberry-install), `ansible`, `android`, `iphone`, `site-support`, `documentation`, `memoire`, `firmware`. Pour décider, chercher dans la doc et le code si le sujet existe déjà dans la brique. Une brique non tranchée bloque la création.
    - Besoin d'OpenSpec ? (oui si évolution ou changement de comportement spécifié → enchaîner `/ticket-to-spec`)
 4. **Après confirmation explicite** seulement :
    - `gh issue create --repo essensys-hub/<repo> --title ... --body-file ...` puis type d'issue via GraphQL `updateIssueIssueType` si besoin
+   - Écrire la matrice dans le corps du ticket (section `## Briques`, un tableau brique / concernée / raison).
    - `gh project item-add 6 --owner essensys-hub --url <issue-url>` et renseigner les champs (`gh project item-edit`)
 5. Affiche l'URL et propose l'étape suivante (`/ticket-to-spec`, ou correctif trivial direct).
 

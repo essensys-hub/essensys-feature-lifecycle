@@ -37,6 +37,10 @@ Les tickets venus de l'extérieur doivent être validés par un humain : signale
 - **Correctif trivial** (une PR, aucun comportement spécifié ne change) : pas d'OpenSpec. La décision est tracée en commentaire de l'issue.
 - Le `Feature ID` suit le format `<slug>-AAAA-MM-NNN`. Il nomme à la fois le change OpenSpec et le manifest.
 
+## Matrice des briques
+
+Toute `Feature` décide, pour chacune des 11 briques (`cloud`, `portail-cloud`, `gateway-cm5`, `raspberry-pi`, `ansible`, `android`, `iphone`, `site-support`, `documentation`, `memoire`, `firmware`), si elle est **concernée** ou **non concernée (avec raison)**. La matrice est validée par l'humain dans `/ticket`, reprise par `/ticket-to-spec` (une sub-issue par brique concernée) et enregistrée dans le bloc `bricks` du manifest. `check_feature_gate.py` refuse une matrice incomplète, et refuse `merged`/`archived` tant qu'une brique concernée n'est pas livrée. Claude ne tranche jamais seul qu'une brique est hors périmètre.
+
 ## Cycle et statuts
 
 `Idée → Spec → Prêt → En cours → Test → Gate sécu → Déployé → Archivé`

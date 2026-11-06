@@ -73,6 +73,14 @@ DOMOTIC_HINTS = (
 )
 
 
+BRICKS = (
+    "cloud", "portail-cloud", "gateway-cm5", "raspberry-pi", "ansible", "android",
+    "iphone", "site-support", "documentation", "memoire", "firmware",
+)
+# Statuts de manifest à partir desquels toute brique concernée doit être livrée.
+DELIVERY_STATUSES = {"merged", "archived"}
+
+
 @dataclass
 class ManifestResult:
     path: str
@@ -378,6 +386,35 @@ def check_ux_matrix(manifest: dict[str, object], result: ManifestResult, *, mirr
             )
 
 
+def check_bricks(manifest: dict[str, object], result: ManifestResult) -> None:
+    """Matrice des briques : aucune brique oubliée, aucune brique concernée non livrée."""
+    bricks = manifest.get("bricks")
+    status = manifest.get("status")
+    if bricks is None:
+        if status in ("proposed", "in-progress"):
+            result.warnings.append(
+                "Feature sans matrice des briques (`bricks`) : décider brique par brique (concernée ou non)."
+            )
+        return
+    if not isinstance(bricks, dict):
+        result.errors.append("`bricks` doit être un objet {brique: {scope, ...}}.")
+        return
+    missing = [b for b in BRICKS if b not in bricks]
+    if missing:
+        result.errors.append("Matrice des briques incomplète, brique(s) non décidée(s) : " + ", ".join(missing))
+    for name, entry in bricks.items():
+        if not isinstance(entry, dict):
+            continue
+        scope = entry.get("scope")
+        if scope == "not-concerned" and not str(entry.get("reason", "")).strip():
+            result.errors.append(f"Brique {name} non concernée sans raison.")
+        if scope == "concerned":
+            if not entry.get("issue"):
+                result.errors.append(f"Brique {name} concernée sans sub-issue (`issue`).")
+            if status in DELIVERY_STATUSES and not entry.get("delivered"):
+                result.errors.append(f"Brique {name} concernée mais non livrée (statut {status}).")
+
+
 def check_manifest(path: Path, *, mirror_repo: bool = False) -> ManifestResult:
     manifest = load_manifest(path)
     result = ManifestResult(path=rel(path), errors=[], warnings=[])
@@ -418,6 +455,7 @@ def check_manifest(path: Path, *, mirror_repo: bool = False) -> ManifestResult:
         result.warnings.append("Merged feature has no PR URL recorded.")
 
     check_ux_matrix(manifest, result, mirror_repo=mirror_repo)
+    check_bricks(manifest, result)
     if string_value(manifest, "implementation", "primary_surface") in NATIVE_MOBILE_SURFACES:
         if not list_value(manifest, "tests", "junit"):
             result.errors.append("Native mobile feature must declare tests.junit (unit + instrumented tests).")
