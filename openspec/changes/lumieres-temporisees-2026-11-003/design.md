@@ -24,6 +24,27 @@ Faits relevés dans le code (explorations du 2026-11-06, firmware BP 099-37 et b
 6. **Interface.** Raccourcis 15 min, 30 min, 1 h, Jamais, plus « Autre » (1 à 255). Une valeur courante non raccourcie s'affiche telle quelle (« 7 min »). Après un envoi, relecture à 5, 10 et 20 s comme pour les prises de sécurité. Mode test : commande validée mais non exécutée.
 7. **Deux endroits.** Un menu « Temporisations » (liste des six) et le même composant dans la fiche de chaque lumière (panneau repliable sur les portails, ligne ou feuille dans les apps).
 
+## Contrat d'API (identique cloud et gateway)
+
+Chemins : cloud `GET /api/portal/lights/timers` et `PUT /api/portal/admin/lights/timers/{id}` ; gateway `GET /api/admin/lights/timers` et `PUT /api/admin/lights/timers/{id}`. Les clients ajoutent le préfixe de leur mode (cloud ou LAN) comme pour l'injection.
+
+`GET` répond 200 :
+
+```json
+{"timers":[
+  {"id":"dressing","label":"Dressing","key":521,"minutes":15},
+  {"id":"wc1","label":"WC 1","key":555,"minutes":null},
+  {"id":"wc2","label":"WC 2","key":556,"minutes":0},
+  {"id":"pieceserv","label":"Service","key":557,"minutes":60},
+  {"id":"ann1","label":"Annexe 1","key":561,"minutes":null},
+  {"id":"ann2","label":"Annexe 2","key":562,"minutes":7}
+]}
+```
+
+Ordre fixe : dressing, wc1, wc2, pieceserv, ann1, ann2. `minutes` est un entier 0 à 255, ou `null` si la valeur n'a jamais été lue (jamais 0 par défaut). `0` signifie « jamais ».
+
+`PUT` reçoit `{"minutes": 30}` et répond 200 `{"id":"wc2","minutes":30,"status":"queued"}` (`"dry_run"` avec le mode test, rien n'est mis en file). Erreurs : 400 `{"error":"invalid_minutes"}` ou `{"error":"unknown_light"}`, 401 sans session, 403 `{"error":"forbidden"}` si l'appelant n'est pas administrateur de l'armoire.
+
 ## Risks / Trade-offs
 
 - **Écran de l'armoire et valeur libre.** Il ne coche aucune case pour 7 min, et peut écraser la valeur à la validation. Mitigation : test sur banc obligatoire avant déploiement ; sinon limiter la valeur libre.
