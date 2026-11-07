@@ -84,7 +84,7 @@ jobs:
           java-version: "17"
 
       - name: Restore previous report (history / flaky detection)
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v27
         continue-on-error: true
         with:
           name: nonreg-report
