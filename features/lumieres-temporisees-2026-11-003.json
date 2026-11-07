@@ -1,0 +1,134 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "lumieres-temporisees-2026-11-003",
+  "title": "Régler l'extinction automatique des lumières (menu central et fiche lumière)",
+  "status": "proposed",
+  "owner": "nrineau",
+  "github": {
+    "issue": "essensys-hub/essensys-feature-lifecycle#45",
+    "project_item": "PVTI_lADODqt0Wc4BavHTzhGsSFY"
+  },
+  "git": {
+    "branch": "feat/lumieres-temporisees-2026-11-003",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "lumieres-temporisees-2026-11-003",
+    "path": "openspec/changes/lumieres-temporisees-2026-11-003",
+    "proposal": "openspec/changes/lumieres-temporisees-2026-11-003/proposal.md",
+    "design": "openspec/changes/lumieres-temporisees-2026-11-003/design.md",
+    "tasks": "openspec/changes/lumieres-temporisees-2026-11-003/tasks.md",
+    "specs": [
+      "openspec/changes/lumieres-temporisees-2026-11-003/specs/light-timers-cloud/spec.md",
+      "openspec/changes/lumieres-temporisees-2026-11-003/specs/light-timers-gateway/spec.md",
+      "openspec/changes/lumieres-temporisees-2026-11-003/specs/light-timers-clients/spec.md"
+    ]
+  },
+  "bricks": {
+    "cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-backend#53"
+    },
+    "portail-cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-frontend#39"
+    },
+    "gateway-cm5": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-server-backend#17"
+    },
+    "raspberry-pi": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-raspberry-install#20"
+    },
+    "ansible": {
+      "scope": "not-concerned",
+      "reason": "aucun nouveau paramètre ni service, déploiement standard"
+    },
+    "android": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-android-phone-apps#43"
+    },
+    "iphone": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-ios-phone-apps#43"
+    },
+    "site-support": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-support-site#21"
+    },
+    "documentation": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-doc#23"
+    },
+    "memoire": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-memory#24"
+    },
+    "firmware": {
+      "scope": "not-concerned",
+      "reason": "le BP et les boîtiers acceptent déjà 1 à 255 minutes, à confirmer au banc"
+    }
+  },
+  "implementation": {
+    "paths": [
+      "openspec/changes/lumieres-temporisees-2026-11-003/tasks.md"
+    ],
+    "primary_surface": "ops"
+  },
+  "userguide": {
+    "pages": [
+      "docs/feature-lifecycle/README.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "coverage_must_test": [
+      "valeur hors plage refusee",
+      "administrateur seulement",
+      "valeur libre de 7 minutes",
+      "aucune commande sur armoire reelle"
+    ],
+    "smoke_tags": [
+      "@nr"
+    ]
+  },
+  "release": {
+    "changelog_entry": "Android 2.5.0 et iPhone 2.5.0 : régler l'extinction automatique de six lumières (Dressing, WC 1, WC 2, Service, Annexe 1, Annexe 2) depuis un menu Temporisations et la fiche de chaque lumière ; portails cloud et local ; backends cloud et gateway (#45).",
+    "target_tag": "android-v2.5.0",
+    "surfaces": [
+      "essensys-user-portal-backend",
+      "essensys-server-backend",
+      "essensys-user-portal-frontend",
+      "essensys-server-frontend",
+      "essensys-android-phone-apps",
+      "essensys-ios-phone-apps",
+      "essensys-support-site",
+      "essensys-doc",
+      "essensys-memory"
+    ],
+    "paths": []
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": "openspec/changes/lumieres-temporisees-2026-11-003/design.md",
+    "owner_security": "nrineau"
+  }
+}
