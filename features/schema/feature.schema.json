@@ -636,6 +636,46 @@
           "maxLength": 64
         }
       }
+    },
+    "bricks": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Matrice des briques : chaque brique de la solution est concernée ou non (avec raison). Optionnelle pour les anciennes features.",
+      "properties": {
+        "cloud": {
+          "$ref": "#/$defs/brick"
+        },
+        "portail-cloud": {
+          "$ref": "#/$defs/brick"
+        },
+        "gateway-cm5": {
+          "$ref": "#/$defs/brick"
+        },
+        "raspberry-pi": {
+          "$ref": "#/$defs/brick"
+        },
+        "ansible": {
+          "$ref": "#/$defs/brick"
+        },
+        "android": {
+          "$ref": "#/$defs/brick"
+        },
+        "iphone": {
+          "$ref": "#/$defs/brick"
+        },
+        "site-support": {
+          "$ref": "#/$defs/brick"
+        },
+        "documentation": {
+          "$ref": "#/$defs/brick"
+        },
+        "memoire": {
+          "$ref": "#/$defs/brick"
+        },
+        "firmware": {
+          "$ref": "#/$defs/brick"
+        }
+      }
     }
   },
   "$defs": {
@@ -668,6 +708,36 @@
           "minItems": 1
         }
       ]
+    },
+    "brick": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope"
+      ],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "concerned",
+            "not-concerned"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Obligatoire si not-concerned"
+        },
+        "issue": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[0-9]+$",
+          "description": "Sub-issue de la brique (obligatoire si concerned)"
+        },
+        "delivered": {
+          "type": "boolean",
+          "description": "true quand la brique est livrée"
+        }
+      }
     }
   }
 }
