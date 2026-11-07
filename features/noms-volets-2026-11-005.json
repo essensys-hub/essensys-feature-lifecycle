@@ -1,0 +1,135 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "noms-volets-2026-11-005",
+  "title": "Renommer les volets et stores (noms personnalisés), identiques sur tous les clients",
+  "status": "proposed",
+  "owner": "nrineau",
+  "github": {
+    "issue": "essensys-hub/essensys-feature-lifecycle#52",
+    "project_item": "PVTI_lADODqt0Wc4BavHTzhGzyO8"
+  },
+  "git": {
+    "branch": "feat/noms-volets-2026-11-005",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "noms-volets-2026-11-005",
+    "path": "openspec/changes/noms-volets-2026-11-005",
+    "proposal": "openspec/changes/noms-volets-2026-11-005/proposal.md",
+    "design": "openspec/changes/noms-volets-2026-11-005/design.md",
+    "tasks": "openspec/changes/noms-volets-2026-11-005/tasks.md",
+    "specs": [
+      "openspec/changes/noms-volets-2026-11-005/specs/shutter-names-cloud/spec.md",
+      "openspec/changes/noms-volets-2026-11-005/specs/shutter-names-gateway/spec.md",
+      "openspec/changes/noms-volets-2026-11-005/specs/shutter-names-clients/spec.md"
+    ]
+  },
+  "bricks": {
+    "cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-backend#55"
+    },
+    "portail-cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-frontend#41"
+    },
+    "gateway-cm5": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-server-backend#19"
+    },
+    "raspberry-pi": {
+      "scope": "not-concerned",
+      "reason": "même fichier, même clé light_names.path et même répertoire que #41 (section shutters à côté de lights) ; un nouveau chemin rendrait cette brique concernée"
+    },
+    "ansible": {
+      "scope": "not-concerned",
+      "reason": "répertoire, montage et clé light_names.path déjà en place (#41), aucun nouveau chemin ; un nouveau chemin rendrait cette brique concernée"
+    },
+    "android": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-android-phone-apps#45"
+    },
+    "iphone": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-ios-phone-apps#45"
+    },
+    "site-support": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-support-site#23"
+    },
+    "documentation": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-doc#25"
+    },
+    "memoire": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-memory#26"
+    },
+    "firmware": {
+      "scope": "not-concerned",
+      "reason": "aucun nom n'est écrit dans l'armoire, firmware et table d'échange inchangés"
+    }
+  },
+  "implementation": {
+    "paths": [
+      "openspec/changes/noms-volets-2026-11-005/tasks.md"
+    ],
+    "primary_surface": "ops"
+  },
+  "userguide": {
+    "pages": [
+      "docs/feature-lifecycle/README.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "coverage_must_test": [
+      "nom de 41 caractères refusé",
+      "administrateur de l'armoire seulement",
+      "nom affiché partout",
+      "fusion dernier écrit gagne",
+      "aucune commande sur armoire reelle"
+    ],
+    "smoke_tags": [
+      "@nr"
+    ]
+  },
+  "release": {
+    "changelog_entry": "Android 2.7.0 et iPhone 2.7.0 : renommer les volets et stores (par exemple Volet 1 Salon en Volet baie vitrée), nom affiché partout y compris le temps de course, synchronisé entre le cloud et la gateway ; portails cloud et local (#52).",
+    "target_tag": "android-v2.7.0",
+    "surfaces": [
+      "essensys-user-portal-backend",
+      "essensys-server-backend",
+      "essensys-user-portal-frontend",
+      "essensys-server-frontend",
+      "essensys-android-phone-apps",
+      "essensys-ios-phone-apps",
+      "essensys-support-site",
+      "essensys-doc",
+      "essensys-memory"
+    ],
+    "paths": []
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": "openspec/changes/noms-volets-2026-11-005/design.md",
+    "owner_security": "nrineau"
+  }
+}
