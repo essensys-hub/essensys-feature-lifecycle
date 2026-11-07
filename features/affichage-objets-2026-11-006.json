@@ -27,15 +27,15 @@
   "bricks": {
     "cloud": {
       "scope": "concerned",
-      "issue": "essensys-hub/essensys-user-portal-backend#0"
+      "issue": "essensys-hub/essensys-user-portal-backend#59"
     },
     "portail-cloud": {
       "scope": "concerned",
-      "issue": "essensys-hub/essensys-user-portal-frontend#0"
+      "issue": "essensys-hub/essensys-user-portal-frontend#45"
     },
     "gateway-cm5": {
       "scope": "concerned",
-      "issue": "essensys-hub/essensys-server-backend#0"
+      "issue": "essensys-hub/essensys-server-backend#23"
     },
     "raspberry-pi": {
       "scope": "not-concerned",
@@ -47,23 +47,23 @@
     },
     "android": {
       "scope": "concerned",
-      "issue": "essensys-hub/essensys-android-phone-apps#0"
+      "issue": "essensys-hub/essensys-android-phone-apps#49"
     },
     "iphone": {
       "scope": "concerned",
-      "issue": "essensys-hub/essensys-ios-phone-apps#0"
+      "issue": "essensys-hub/essensys-ios-phone-apps#49"
     },
     "site-support": {
       "scope": "concerned",
-      "issue": "essensys-hub/essensys-support-site#0"
+      "issue": "essensys-hub/essensys-support-site#27"
     },
     "documentation": {
       "scope": "concerned",
-      "issue": "essensys-hub/essensys-doc#0"
+      "issue": "essensys-hub/essensys-doc#29"
     },
     "memoire": {
       "scope": "concerned",
-      "issue": "essensys-hub/essensys-memory#0"
+      "issue": "essensys-hub/essensys-memory#30"
     },
     "firmware": {
       "scope": "not-concerned",
