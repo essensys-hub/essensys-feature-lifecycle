@@ -42,7 +42,7 @@ Un objet désactivé SHALL être masqué pour tous les utilisateurs dans les lis
 - **THEN** l'éditeur de scénarios la propose toujours
 
 ### Requirement: Ordre appliqué dans chaque groupe
-L'ordre de `order` SHALL s'appliquer à l'intérieur de chaque groupe d'affichage (principal, indirect, volets, éléments spéciaux) ; un objet ne change jamais de groupe. Les écrans sans groupe (Temporisations, « Temps de course ») suivent l'ordre global filtré. Les noms personnalisés (#41, #52) et les temporisations (#45) restent inchangés.
+L'ordre de `order` SHALL s'appliquer à l'intérieur de chaque groupe d'affichage (principal, indirect, volets, éléments spéciaux) ; un objet ne change jamais de groupe. Les écrans sans groupe (Temporisations, « Temps de course ») suivent l'ordre global filtré. Les noms personnalisés (#41, #52) et les temporisations (#45) restent inchangés. **Exception pour Temporisations** : tant que l'ordre effectif des lumières est identique à l'ordre du catalogue d'origine (aucun réordonnancement enregistré, y compris après `reset`), l'écran Temporisations MUST garder l'ordre propre de son catalogue (Dressing, WC 1, WC 2, Pièce de service, Annexe 1, Annexe 2), filtré par les objets désactivés ; dès que l'ordre effectif diffère de celui du catalogue, il suit l'ordre global filtré. Le critère est la comparaison avec le catalogue, jamais un `order` vide, car les clients envoient toujours un `order` complet.
 
 #### Scenario: Ordre choisi
 - **GIVEN** `volet2salon` placé avant `volet1salon`
