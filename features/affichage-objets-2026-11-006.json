@@ -1,0 +1,137 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "affichage-objets-2026-11-006",
+  "title": "Activer ou désactiver les lumières et les volets et choisir leur ordre d'affichage, identiques sur tous les clients",
+  "status": "proposed",
+  "owner": "nrineau",
+  "github": {
+    "issue": "essensys-hub/essensys-feature-lifecycle#55",
+    "project_item": "PVTI_lADODqt0Wc4BavHTzhG0e10"
+  },
+  "git": {
+    "branch": "feat/affichage-objets-2026-11-006",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "affichage-objets-2026-11-006",
+    "path": "openspec/changes/affichage-objets-2026-11-006",
+    "proposal": "openspec/changes/affichage-objets-2026-11-006/proposal.md",
+    "design": "openspec/changes/affichage-objets-2026-11-006/design.md",
+    "tasks": "openspec/changes/affichage-objets-2026-11-006/tasks.md",
+    "specs": [
+      "openspec/changes/affichage-objets-2026-11-006/specs/object-layout-cloud/spec.md",
+      "openspec/changes/affichage-objets-2026-11-006/specs/object-layout-gateway/spec.md",
+      "openspec/changes/affichage-objets-2026-11-006/specs/object-layout-clients/spec.md"
+    ]
+  },
+  "bricks": {
+    "cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-backend#59"
+    },
+    "portail-cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-frontend#45"
+    },
+    "gateway-cm5": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-server-backend#23"
+    },
+    "raspberry-pi": {
+      "scope": "not-concerned",
+      "reason": "même fichier, même clé light_names.path et même répertoire que #41 et #52 (deux sections de plus, lights_layout et shutters_layout) ; un nouveau chemin rendrait cette brique concernée"
+    },
+    "ansible": {
+      "scope": "not-concerned",
+      "reason": "répertoire, montage et clé light_names.path déjà en place (#41), aucune nouvelle clé de configuration ; un nouveau chemin ou une nouvelle clé rendrait cette brique concernée"
+    },
+    "android": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-android-phone-apps#49"
+    },
+    "iphone": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-ios-phone-apps#49"
+    },
+    "site-support": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-support-site#27"
+    },
+    "documentation": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-doc#29"
+    },
+    "memoire": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-memory#30"
+    },
+    "firmware": {
+      "scope": "not-concerned",
+      "reason": "aucune disposition n'est écrite dans l'armoire, firmware et table d'échange inchangés"
+    }
+  },
+  "implementation": {
+    "paths": [
+      "openspec/changes/affichage-objets-2026-11-006/tasks.md"
+    ],
+    "primary_surface": "ops"
+  },
+  "userguide": {
+    "pages": [
+      "docs/feature-lifecycle/README.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "coverage_must_test": [
+      "objet désactivé masqué partout",
+      "aucune commande pour un objet désactivé",
+      "administrateur de l'armoire seulement",
+      "ordre appliqué dans chaque groupe",
+      "fusion du document entier dernier écrit gagne",
+      "repli sur le catalogue complet",
+      "aucune commande sur armoire reelle"
+    ],
+    "smoke_tags": [
+      "@nr"
+    ]
+  },
+  "release": {
+    "changelog_entry": "Android 2.8.0 et iPhone 2.8.0 : activer ou désactiver chaque lumière et chaque volet ou store et choisir leur ordre d'affichage (écran de gestion de l'administrateur), appliqué aux listes, aux groupes, aux temporisations et au temps de course, synchronisé entre le cloud et la gateway ; portails cloud et local (#55).",
+    "target_tag": "android-v2.8.0",
+    "surfaces": [
+      "essensys-user-portal-backend",
+      "essensys-server-backend",
+      "essensys-user-portal-frontend",
+      "essensys-server-frontend",
+      "essensys-android-phone-apps",
+      "essensys-ios-phone-apps",
+      "essensys-support-site",
+      "essensys-doc",
+      "essensys-memory"
+    ],
+    "paths": []
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": "openspec/changes/affichage-objets-2026-11-006/design.md",
+    "owner_security": "nrineau"
+  }
+}
