@@ -1,0 +1,137 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "noms-lumieres-2026-11-004",
+  "title": "Renommer les lumières (noms personnalisés), identiques sur tous les clients",
+  "status": "proposed",
+  "owner": "nrineau",
+  "github": {
+    "issue": "essensys-hub/essensys-feature-lifecycle#41",
+    "project_item": "PVTI_lADODqt0Wc4BavHTzhGkOlI"
+  },
+  "git": {
+    "branch": "feat/noms-lumieres-2026-11-004",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "noms-lumieres-2026-11-004",
+    "path": "openspec/changes/noms-lumieres-2026-11-004",
+    "proposal": "openspec/changes/noms-lumieres-2026-11-004/proposal.md",
+    "design": "openspec/changes/noms-lumieres-2026-11-004/design.md",
+    "tasks": "openspec/changes/noms-lumieres-2026-11-004/tasks.md",
+    "specs": [
+      "openspec/changes/noms-lumieres-2026-11-004/specs/light-names-cloud/spec.md",
+      "openspec/changes/noms-lumieres-2026-11-004/specs/light-names-gateway/spec.md",
+      "openspec/changes/noms-lumieres-2026-11-004/specs/light-names-clients/spec.md"
+    ]
+  },
+  "bricks": {
+    "cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-backend#55"
+    },
+    "portail-cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-frontend#41"
+    },
+    "gateway-cm5": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-server-backend#19"
+    },
+    "raspberry-pi": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-raspberry-install#22"
+    },
+    "ansible": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-ansible#14"
+    },
+    "android": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-android-phone-apps#45"
+    },
+    "iphone": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-ios-phone-apps#45"
+    },
+    "site-support": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-support-site#23"
+    },
+    "documentation": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-doc#25"
+    },
+    "memoire": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-memory#26"
+    },
+    "firmware": {
+      "scope": "not-concerned",
+      "reason": "aucun nom n'est écrit dans l'armoire, firmware et table d'échange inchangés"
+    }
+  },
+  "implementation": {
+    "paths": [
+      "openspec/changes/noms-lumieres-2026-11-004/tasks.md"
+    ],
+    "primary_surface": "ops"
+  },
+  "userguide": {
+    "pages": [
+      "docs/feature-lifecycle/README.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "coverage_must_test": [
+      "nom de 41 caractères refusé",
+      "administrateur de l'armoire seulement",
+      "nom affiché partout",
+      "fusion dernier écrit gagne",
+      "aucune commande sur armoire reelle"
+    ],
+    "smoke_tags": [
+      "@nr"
+    ]
+  },
+  "release": {
+    "changelog_entry": "Android 2.6.0 et iPhone 2.6.0 : renommer les lumières (par exemple Dressing en WC 3), nom affiché partout, synchronisé entre le cloud et la gateway ; portails cloud et local (#41).",
+    "target_tag": "android-v2.6.0",
+    "surfaces": [
+      "essensys-user-portal-backend",
+      "essensys-server-backend",
+      "essensys-user-portal-frontend",
+      "essensys-server-frontend",
+      "essensys-android-phone-apps",
+      "essensys-ios-phone-apps",
+      "essensys-support-site",
+      "essensys-ansible",
+      "essensys-raspberry-install",
+      "essensys-doc",
+      "essensys-memory"
+    ],
+    "paths": []
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": "openspec/changes/noms-lumieres-2026-11-004/design.md",
+    "owner_security": "nrineau"
+  }
+}
