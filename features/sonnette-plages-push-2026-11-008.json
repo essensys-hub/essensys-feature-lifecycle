@@ -27,15 +27,15 @@
   "bricks": {
     "cloud": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-user-portal-backend#61"
     },
     "portail-cloud": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-user-portal-frontend#47"
     },
     "gateway-cm5": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-server-backend#28"
     },
     "raspberry-pi": {
       "scope": "not-concerned",
@@ -43,27 +43,27 @@
     },
     "ansible": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-ansible#19"
     },
     "android": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-android-phone-apps#51"
     },
     "iphone": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-ios-phone-apps#51"
     },
     "site-support": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-support-site#29"
     },
     "documentation": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-doc#33"
     },
     "memoire": {
       "scope": "concerned",
-      "issue": "TBD"
+      "issue": "essensys-hub/essensys-memory#34"
     },
     "firmware": {
       "scope": "not-concerned",
