@@ -1,0 +1,132 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "sonnette-unifi-2026-11-007",
+  "title": "Sonnette UniFi sur la CM5 : vidéo dans le portail local et clignotement de lumières choisies",
+  "status": "proposed",
+  "owner": "nrineau",
+  "github": {
+    "issue": "essensys-hub/essensys-feature-lifecycle#58",
+    "project_item": "PVTI_lADODqt0Wc4BavHTzhG4OyY"
+  },
+  "git": {
+    "branch": "spec/sonnette-unifi-2026-11-007",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "sonnette-unifi-2026-11-007",
+    "path": "openspec/changes/sonnette-unifi-2026-11-007",
+    "proposal": "openspec/changes/sonnette-unifi-2026-11-007/proposal.md",
+    "design": "openspec/changes/sonnette-unifi-2026-11-007/design.md",
+    "tasks": "openspec/changes/sonnette-unifi-2026-11-007/tasks.md",
+    "specs": [
+      "openspec/changes/sonnette-unifi-2026-11-007/specs/doorbell-gateway/spec.md",
+      "openspec/changes/sonnette-unifi-2026-11-007/specs/doorbell-portal/spec.md"
+    ]
+  },
+  "bricks": {
+    "cloud": {
+      "scope": "not-concerned",
+      "reason": "fonction locale : la console UniFi est sur le réseau de la maison"
+    },
+    "portail-cloud": {
+      "scope": "not-concerned",
+      "reason": "même raison : réglage et vidéo sur le portail local seulement"
+    },
+    "gateway-cm5": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-server-backend#25"
+    },
+    "raspberry-pi": {
+      "scope": "not-concerned",
+      "reason": "seule la CM5 est demandée"
+    },
+    "ansible": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-ansible#16"
+    },
+    "android": {
+      "scope": "not-concerned",
+      "reason": "la vidéo et le réglage restent sur le portail local dans ce ticket"
+    },
+    "iphone": {
+      "scope": "not-concerned",
+      "reason": "la vidéo et le réglage restent sur le portail local dans ce ticket"
+    },
+    "site-support": {
+      "scope": "not-concerned",
+      "reason": "aucune nouvelle version d'application, donc pas de page /android à mettre à jour"
+    },
+    "documentation": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-doc#31"
+    },
+    "memoire": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-memory#32"
+    },
+    "firmware": {
+      "scope": "not-concerned",
+      "reason": "utilise les commandes de lumière existantes, firmware et table d'échange inchangés"
+    }
+  },
+  "implementation": {
+    "paths": [
+      "openspec/changes/sonnette-unifi-2026-11-007/tasks.md"
+    ],
+    "primary_surface": "ops"
+  },
+  "userguide": {
+    "pages": [
+      "docs/feature-lifecycle/README.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "coverage_must_test": [
+      "pression de la sonnette détectée",
+      "clignotement des seules lumières choisies, terminé par allumé",
+      "une seule séquence en cas de rafale",
+      "administrateur de la gateway seulement pour les réglages",
+      "console UniFi injoignable sans impact sur la gateway",
+      "aucune adresse ni clé dans les journaux",
+      "aucune commande sur armoire reelle"
+    ],
+    "smoke_tags": [
+      "@nr"
+    ]
+  },
+  "release": {
+    "changelog_entry": "Gateway CM5 et portail local : la sonnette UniFi affiche sa vidéo et fait clignoter les lumières choisies par l'administrateur (#58).",
+    "target_tag": null,
+    "surfaces": [
+      "essensys-server-backend",
+      "essensys-server-frontend",
+      "essensys-ansible",
+      "essensys-doc",
+      "essensys-memory"
+    ],
+    "paths": []
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": "openspec/changes/sonnette-unifi-2026-11-007/design.md",
+    "owner_security": "nrineau"
+  }
+}
