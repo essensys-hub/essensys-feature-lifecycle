@@ -1,0 +1,140 @@
+{
+  "$schema": "./schema/feature.schema.json",
+  "id": "sonnette-plages-push-2026-11-008",
+  "title": "Sonnette : plages horaires, notifications push mobiles et présence de la gateway",
+  "status": "proposed",
+  "owner": "nrineau",
+  "github": {
+    "issue": "essensys-hub/essensys-feature-lifecycle#61",
+    "project_item": "PVTI_lADODqt0Wc4BavHTzhG9N80"
+  },
+  "git": {
+    "branch": "spec/sonnette-plages-push-2026-11-008",
+    "pr_url": null
+  },
+  "openspec": {
+    "change_id": "sonnette-plages-push-2026-11-008",
+    "path": "openspec/changes/sonnette-plages-push-2026-11-008",
+    "proposal": "openspec/changes/sonnette-plages-push-2026-11-008/proposal.md",
+    "design": "openspec/changes/sonnette-plages-push-2026-11-008/design.md",
+    "tasks": "openspec/changes/sonnette-plages-push-2026-11-008/tasks.md",
+    "specs": [
+      "openspec/changes/sonnette-plages-push-2026-11-008/specs/doorbell-schedule-gateway/spec.md",
+      "openspec/changes/sonnette-plages-push-2026-11-008/specs/doorbell-push-cloud/spec.md",
+      "openspec/changes/sonnette-plages-push-2026-11-008/specs/doorbell-clients/spec.md"
+    ]
+  },
+  "bricks": {
+    "cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-backend#61"
+    },
+    "portail-cloud": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-user-portal-frontend#47"
+    },
+    "gateway-cm5": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-server-backend#28"
+    },
+    "raspberry-pi": {
+      "scope": "not-concerned",
+      "reason": "la sonnette n'existe pas sur le Raspberry Pi (même périmètre que #58)"
+    },
+    "ansible": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-ansible#19"
+    },
+    "android": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-android-phone-apps#51"
+    },
+    "iphone": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-ios-phone-apps#51"
+    },
+    "site-support": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-support-site#29"
+    },
+    "documentation": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-doc#33"
+    },
+    "memoire": {
+      "scope": "concerned",
+      "issue": "essensys-hub/essensys-memory#34"
+    },
+    "firmware": {
+      "scope": "not-concerned",
+      "reason": "aucun réglage écrit dans l'armoire, table d'échange et firmware inchangés"
+    }
+  },
+  "implementation": {
+    "paths": [
+      "openspec/changes/sonnette-plages-push-2026-11-008/tasks.md"
+    ],
+    "primary_surface": "ops"
+  },
+  "userguide": {
+    "pages": [
+      "docs/feature-lifecycle/README.md"
+    ],
+    "language": "fr",
+    "i18n_keys": [],
+    "screenshots": []
+  },
+  "tests": {
+    "playwright": [],
+    "coverage_must_test": [
+      "plage horaire évaluée à l'heure locale du fuseau réglé, changement d'heure compris",
+      "hors plage : ni clignotement ni signalement au cloud",
+      "signalement au cloud idempotent, sans jeton dans les journaux",
+      "notification envoyée seulement aux utilisateurs liés avec la préférence activée",
+      "jeton push jamais journalisé ni renvoyé",
+      "fournisseur push absent ou en panne sans impact sur la gateway",
+      "option Sonnette visible seulement avec une gateway liée",
+      "état de la gateway : aucune, en ligne, hors ligne",
+      "aucune commande sur armoire reelle"
+    ],
+    "smoke_tags": [
+      "@nr"
+    ]
+  },
+  "release": {
+    "changelog_entry": "Sonnette : plages horaires réglables, notifications push sur Android et iPhone, état de la gateway dans le cloud et les apps (#61).",
+    "target_tag": null,
+    "surfaces": [
+      "essensys-server-backend",
+      "essensys-server-frontend",
+      "essensys-user-portal-backend",
+      "essensys-user-portal-frontend",
+      "essensys-ansible",
+      "essensys-android-phone-apps",
+      "essensys-ios-phone-apps",
+      "essensys-support-site",
+      "essensys-doc",
+      "essensys-memory"
+    ],
+    "paths": []
+  },
+  "security": {
+    "sca_tool": "dependabot",
+    "dependabot_alerts_url": null,
+    "last_scan_at": null,
+    "cve_findings": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "secret_scan": {
+      "status": "clean",
+      "tool": "gitleaks",
+      "last_scan_at": null
+    },
+    "muted_findings": [],
+    "threat_model_url": "openspec/changes/sonnette-plages-push-2026-11-008/design.md",
+    "owner_security": "nrineau"
+  }
+}
