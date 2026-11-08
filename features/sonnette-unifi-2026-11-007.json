@@ -87,7 +87,7 @@
     "playwright": [],
     "coverage_must_test": [
       "pression de la sonnette détectée",
-      "clignotement des seules lumières choisies puis restauration",
+      "clignotement des seules lumières choisies, terminé par allumé",
       "une seule séquence en cas de rafale",
       "administrateur de la gateway seulement pour les réglages",
       "console UniFi injoignable sans impact sur la gateway",

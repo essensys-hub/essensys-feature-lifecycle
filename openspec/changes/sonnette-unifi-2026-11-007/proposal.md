@@ -7,7 +7,7 @@ L'installation dispose d'une sonnette connectée UniFi Protect avec caméra. Un 
 
 ## What Changes
 
-- **Gateway (backend)** : un écouteur d'événements UniFi Protect détecte la pression de la sonnette ; un service « sonnette » mémorise l'événement (sonnerie en cours), fait clignoter les lumières choisies puis les remet dans leur état d'origine, et protège contre les rafales. Réglages enregistrés dans une section `doorbell` du **même fichier** que les noms (`light_names.path`, aucune nouvelle clé de chemin). Routes locales : état et vidéo (utilisateur authentifié), réglages et essai (administrateur `lan_admin`).
+- **Gateway (backend)** : un écouteur d'événements UniFi Protect détecte la pression de la sonnette ; un service « sonnette » mémorise l'événement (sonnerie en cours), fait clignoter les lumières choisies (elles finissent allumées) et protège contre les rafales. Réglages enregistrés dans une section `doorbell` du **même fichier** que les noms (`light_names.path`, aucune nouvelle clé de chemin). Routes locales : état et vidéo (utilisateur authentifié), réglages et essai (administrateur `lan_admin`).
 - **Portail local (frontend)** : une fenêtre « Sonnette » s'affiche avec la vidéo quand la sonnette est pressée ; un écran de réglage pour l'administrateur (activer, lumières, nombre de clignotements, essai).
 - **Ansible** : accès UniFi (clé d'API chiffrée) et paramètres de la sonnette déployés sur la CM5.
 - **Documentation et mémoire** : installation, usage, dépannage ; synthèse.
